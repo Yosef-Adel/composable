@@ -25,11 +25,11 @@
     "@nestjs/platform-express": "^11.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "@inventory/shared-items": "workspace:*",
-    "@inventory/shared-sales": "workspace:*",
-    "@inventory/shared-inventory": "workspace:*",
-    "@inventory/shared-purchases": "workspace:*",
-    "@inventory/shared-util": "workspace:*"
+    "@composable/shared-stacks": "workspace:*",
+    "@composable/shared-services": "workspace:*",
+    "@composable/shared-deployment": "workspace:*",
+    "@composable/shared-compose": "workspace:*",
+    "@composable/shared-util": "workspace:*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

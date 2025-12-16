@@ -17,19 +17,19 @@ importers:
 
   apps/backend:
     dependencies:
-      '@inventory/shared-inventory':
+      '@composable/shared-compose':
         specifier: workspace:*
-        version: link:../../libs/shared/inventory
-      '@inventory/shared-items':
+        version: link:../../libs/shared/compose
+      '@composable/shared-deployment':
         specifier: workspace:*
-        version: link:../../libs/shared/items
-      '@inventory/shared-purchases':
+        version: link:../../libs/shared/deployment
+      '@composable/shared-services':
         specifier: workspace:*
-        version: link:../../libs/shared/purchases
-      '@inventory/shared-sales':
+        version: link:../../libs/shared/services
+      '@composable/shared-stacks':
         specifier: workspace:*
-        version: link:../../libs/shared/sales
-      '@inventory/shared-util':
+        version: link:../../libs/shared/stacks
+      '@composable/shared-util':
         specifier: workspace:*
         version: link:../../libs/shared/util
       '@nestjs/common':
@@ -120,6 +120,24 @@ importers:
 
   apps/frontend:
     dependencies:
+      '@composable/shared-compose':
+        specifier: workspace:*
+        version: link:../../libs/shared/compose
+      '@composable/shared-deployment':
+        specifier: workspace:*
+        version: link:../../libs/shared/deployment
+      '@composable/shared-services':
+        specifier: workspace:*
+        version: link:../../libs/shared/services
+      '@composable/shared-stacks':
+        specifier: workspace:*
+        version: link:../../libs/shared/stacks
+      '@composable/shared-util':
+        specifier: workspace:*
+        version: link:../../libs/shared/util
+      '@composable/ui-kit':
+        specifier: workspace:*
+        version: link:../../libs/shared/ui-kit
       '@emotion/react':
         specifier: ^11.14.0
         version: 11.14.0(@types/react@19.2.5)(react@19.2.0)
@@ -129,24 +147,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.66.0(react@19.2.0))
-      '@inventory/shared-inventory':
-        specifier: workspace:*
-        version: link:../../libs/shared/inventory
-      '@inventory/shared-items':
-        specifier: workspace:*
-        version: link:../../libs/shared/items
-      '@inventory/shared-purchases':
-        specifier: workspace:*
-        version: link:../../libs/shared/purchases
-      '@inventory/shared-sales':
-        specifier: workspace:*
-        version: link:../../libs/shared/sales
-      '@inventory/shared-util':
-        specifier: workspace:*
-        version: link:../../libs/shared/util
-      '@inventory/ui-kit':
-        specifier: workspace:*
-        version: link:../../libs/shared/ui-kit
       '@mui/icons-material':
         specifier: ^7.3.5
         version: 7.3.5(@mui/material@7.3.5(@emotion/react@11.14.0(@types/react@19.2.5)(react@19.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.5)(react@19.2.0))(@types/react@19.2.5)(react@19.2.0))(@types/react@19.2.5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(@types/react@19.2.5)(react@19.2.0)
@@ -218,25 +218,25 @@ importers:
         specifier: ^7.2.2
         version: 7.2.2(@types/node@24.10.1)(terser@5.44.1)
 
-  libs/shared/inventory:
+  libs/shared/compose:
     devDependencies:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
 
-  libs/shared/items:
+  libs/shared/deployment:
     devDependencies:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
 
-  libs/shared/purchases:
+  libs/shared/services:
     devDependencies:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
 
-  libs/shared/sales:
+  libs/shared/stacks:
     devDependencies:
       typescript:
         specifier: ^5.3.3

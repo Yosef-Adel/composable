@@ -1,6 +1,6 @@
 import { IconButton, Tooltip } from '@mui/material';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
-import { useThemeMode } from '@inventory/ui-kit/theme';
+import { useThemeMode } from '@composable/ui-kit/theme';
 
 export function ThemeToggle() {
   const { mode, toggleTheme } = useThemeMode();

@@ -1,5 +1,5 @@
 {
-  "name": "@inventory/shared-sales",
+  "name": "@composable/shared-compose",
   "version": "1.0.0",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,23 +1,20 @@
 {
   "compilerOptions": {
     "paths": {
-      "@inventory/shared-items": [
-        "./libs/shared/items/src"
+      "@composable/shared-stacks": [
+        "./libs/shared/stacks/src"
       ],
-      "@inventory/shared-sales": [
-        "./libs/shared/sales/src"
+      "@composable/shared-services": [
+        "./libs/shared/services/src"
       ],
-      "@inventory/shared-inventory": [
-        "./libs/shared/inventory/src"
+      "@composable/shared-deployment": [
+        "./libs/shared/deployment/src"
       ],
-      "@inventory/shared-purchases": [
-        "./libs/shared/purchases/src"
+      "@composable/shared-compose": [
+        "./libs/shared/compose/src"
       ],
-      "@inventory/shared-util": [
+      "@composable/shared-util": [
         "./libs/shared/util/src"
-      ],
-      "@inventory/shared-theme": [
-        "./libs/shared/theme/src"
       ]
     }
   }
