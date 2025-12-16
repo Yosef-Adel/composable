@@ -33,10 +33,13 @@ export const text = {
   dark: { primary: '#FFFFFF', secondary: grey[400], disabled: grey[600] },
 };
 
-// Background - Pure white for light, pure black for dark
+// Background - Pure white for light, dark navy for dark
 export const background = {
   light: { paper: '#FFFFFF', default: '#FFFFFF' },
-  dark: { paper: '#000000', default: '#000000' },  // Pure black
+  dark: {
+    paper: COLORS.background.card,
+    default: COLORS.background.dark
+  },
 };
 
 // Action

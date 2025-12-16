@@ -15,3 +15,19 @@ export * from "./ProgressBar";
 export * from "./SearchNotFound";
 export * from "./Snackbar";
 export * from "./Scrollbar";
+
+// New theme components
+export * from "./TextField";
+export * from "./Switch";
+export * from "./Checkbox";
+export * from "./Radio";
+export * from "./Select";
+export * from "./Tabs";
+export * from "./Tooltip";
+export * from "./Badge";
+export * from "./Avatar";
+export * from "./Progress";
+export * from "./Slider";
+export * from "./IconButton";
+export * from "./Divider";
+export * from "./Chip";

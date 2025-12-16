@@ -4,7 +4,7 @@ import { Box, Button, Stack, Typography, TextField } from '@mui/material';
 import { ProgressBar, progressBar } from './ProgressBar';
 
 const meta = {
-  title: 'Components/ProgressBar',
+  title: 'Components/Feedback/ProgressBar',
   component: ProgressBar,
   parameters: {
     layout: 'fullscreen',

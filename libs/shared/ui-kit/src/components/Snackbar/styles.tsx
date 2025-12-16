@@ -37,7 +37,7 @@ export const StyledToaster = styled(Toaster as any)(({ theme }) => {
     position: "relative" as const,
     borderRadius: "inherit",
     justifyContent: "center",
-    background: theme.palette.grey[100],
+    background: theme.palette.background.neutral || theme.palette.grey[100],
     [`& .${toasterClasses.loadingIcon}`]: {
       zIndex: 9,
       width: 24,
@@ -62,24 +62,29 @@ export const StyledToaster = styled(Toaster as any)(({ theme }) => {
       borderRadius: 12,
       alignItems: "center",
     },
-
+    /*
+     * Content
+     */
     [`& .${toasterClasses.content}`]: {
       gap: 0,
       flex: "1 1 auto",
     },
-
     [`& .${toasterClasses.title}`]: {
       fontSize: theme.typography.subtitle2.fontSize,
     },
-
     [`& .${toasterClasses.description}`]: {
       ...theme.typography.caption,
       opacity: 0.64,
     },
-
+    /*
+     * Buttons
+     */
+    [`& .${toasterClasses.actionButton}`]: {},
+    [`& .${toasterClasses.cancelButton}`]: {},
     [`& .${toasterClasses.closeButton}`]: {
       top: 0,
       right: 0,
+      left: "auto",
       color: "currentColor",
       backgroundColor: "transparent",
       transform: "translate(-6px, 6px)",
@@ -93,15 +98,46 @@ export const StyledToaster = styled(Toaster as any)(({ theme }) => {
         backgroundColor: varAlpha(theme.palette.grey[500], 0.08),
       },
     },
+    /*
+     * Icon
+     */
+    [`& .${toasterClasses.icon}`]: {
+      margin: 0,
+      width: 48,
+      height: 48,
+      alignItems: "center",
+      borderRadius: "inherit",
+      justifyContent: "center",
+      alignSelf: "flex-start",
+      [`& .${toasterClasses.iconSvg}`]: {
+        width: 24,
+        height: 24,
+        fontSize: 0,
+      },
+    },
 
+    /*
+     * Default
+     */
     "@keyframes rotate": { to: { transform: "rotate(1turn)" } },
 
     [`& .${toasterClasses.default}`]: {
       ...baseStyles.toastDefault,
+      [`&:has(${toasterClasses.closeBtnVisible})`]: {
+        [`& .${toasterClasses.content}`]: {
+          paddingRight: 32,
+        },
+      },
+      [`&:has(.${toasterClasses.loader})`]: baseStyles.toastLoader,
+      /*
+       * With loader
+       */
       [`&:has(.${toasterClasses.loader})`]: baseStyles.toastLoader,
       [`& .${toasterClasses.loader}`]: loadingStyles,
     },
-
+    /*
+     * Error
+     */
     [`& .${toasterClasses.error}`]: {
       ...baseStyles.toastColor,
       [`& .${toasterClasses.icon}`]: {
@@ -109,7 +145,9 @@ export const StyledToaster = styled(Toaster as any)(({ theme }) => {
         backgroundColor: varAlpha(theme.palette.error.main, 0.08),
       },
     },
-
+    /*
+     * Success
+     */
     [`& .${toasterClasses.success}`]: {
       ...baseStyles.toastColor,
       [`& .${toasterClasses.icon}`]: {
@@ -117,7 +155,9 @@ export const StyledToaster = styled(Toaster as any)(({ theme }) => {
         backgroundColor: varAlpha(theme.palette.success.main, 0.08),
       },
     },
-
+    /*
+     * Warning
+     */
     [`& .${toasterClasses.warning}`]: {
       ...baseStyles.toastColor,
       [`& .${toasterClasses.icon}`]: {
@@ -125,7 +165,9 @@ export const StyledToaster = styled(Toaster as any)(({ theme }) => {
         backgroundColor: varAlpha(theme.palette.warning.main, 0.08),
       },
     },
-
+    /*
+     * Info
+     */
     [`& .${toasterClasses.info}`]: {
       ...baseStyles.toastColor,
       [`& .${toasterClasses.icon}`]: {

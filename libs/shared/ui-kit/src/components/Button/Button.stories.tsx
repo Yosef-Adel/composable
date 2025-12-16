@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Button } from './Button';
+import { Stack } from '@mui/material';
 
 const meta = {
   title: 'Components/Button',
@@ -29,7 +30,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
-    label: 'Button',
+    label: 'Primary Button',
     variant: 'contained',
     color: 'primary',
   },
@@ -37,7 +38,7 @@ export const Primary: Story = {
 
 export const Secondary: Story = {
   args: {
-    label: 'Button',
+    label: 'Secondary Button',
     variant: 'contained',
     color: 'secondary',
   },
@@ -45,30 +46,64 @@ export const Secondary: Story = {
 
 export const Outlined: Story = {
   args: {
-    label: 'Button',
+    label: 'Outlined Button',
     variant: 'outlined',
+    color: 'primary',
   },
 };
 
 export const Text: Story = {
   args: {
-    label: 'Button',
+    label: 'Text Button',
     variant: 'text',
+    color: 'primary',
   },
 };
 
-export const Large: Story = {
+export const Sizes: Story = {
+  render: () => (
+    <Stack direction="row" spacing={2} alignItems="center">
+      <Button label="Small" size="small" variant="contained" />
+      <Button label="Medium" size="medium" variant="contained" />
+      <Button label="Large" size="large" variant="contained" />
+    </Stack>
+  ),
+};
+
+export const Colors: Story = {
+  render: () => (
+    <Stack direction="row" spacing={2} flexWrap="wrap">
+      <Button label="Primary" color="primary" variant="contained" />
+      <Button label="Secondary" color="secondary" variant="contained" />
+      <Button label="Success" color="success" variant="contained" />
+      <Button label="Error" color="error" variant="contained" />
+      <Button label="Info" color="info" variant="contained" />
+      <Button label="Warning" color="warning" variant="contained" />
+    </Stack>
+  ),
+};
+
+export const Disabled: Story = {
   args: {
-    label: 'Large Button',
-    size: 'large',
+    label: 'Disabled Button',
     variant: 'contained',
+    disabled: true,
   },
 };
 
-export const Small: Story = {
-  args: {
-    label: 'Small Button',
-    size: 'small',
-    variant: 'contained',
-  },
+export const WithStartIcon: Story = {
+  render: () => (
+    <Stack direction="row" spacing={2}>
+      <Button
+        label="Download"
+        variant="contained"
+        startIcon={<span>⬇</span>}
+      />
+      <Button
+        label="Upload"
+        variant="outlined"
+        startIcon={<span>⬆</span>}
+      />
+    </Stack>
+  ),
 };

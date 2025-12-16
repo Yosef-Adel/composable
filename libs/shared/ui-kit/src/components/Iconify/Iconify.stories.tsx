@@ -3,7 +3,7 @@ import { Stack, Box, Typography, Card, CardContent } from '@mui/material';
 import { Iconify, FlagIcon, SocialIcon } from './index';
 
 const meta = {
-  title: 'Components/Iconify',
+  title: 'Components/Display/Iconify',
   parameters: {
     layout: 'padded',
   },

@@ -4,7 +4,7 @@ import { Box, Button, Typography, Stack } from '@mui/material';
 import { LoadingScreen, SplashScreen, LogoAnimation } from './index';
 
 const meta = {
-  title: 'Components/LoadingScreen',
+  title: 'Components/Feedback/LoadingScreen',
   parameters: {
     layout: 'fullscreen',
   },

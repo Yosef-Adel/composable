@@ -6,7 +6,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import { ConfirmDialog } from './ConfirmDialog';
 
 const meta = {
-  title: 'Components/ConfirmDialog',
+  title: 'Components/Feedback/ConfirmDialog',
   component: ConfirmDialog,
   parameters: {
     layout: 'centered',

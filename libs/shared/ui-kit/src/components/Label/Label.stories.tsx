@@ -7,7 +7,7 @@ import StarIcon from '@mui/icons-material/Star';
 import { Label } from './Label';
 
 const meta = {
-  title: 'Components/Label',
+  title: 'Components/Display/Label',
   component: Label,
   parameters: {
     layout: 'centered',

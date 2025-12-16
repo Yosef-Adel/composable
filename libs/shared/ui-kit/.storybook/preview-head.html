@@ -1,0 +1,25 @@
+<style>
+  /* Ensure Storybook canvas respects dark mode */
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Override Storybook's default white backgrounds */
+  #storybook-root,
+  #storybook-docs {
+    background-color: transparent !important;
+    min-height: 100vh;
+  }
+
+  /* Ensure docs page respects theme */
+  .sbdocs-wrapper,
+  .sbdocs-content {
+    background-color: transparent !important;
+  }
+
+  /* Override any hardcoded white backgrounds in Storybook */
+  .sb-show-main {
+    background-color: transparent !important;
+  }
+</style>

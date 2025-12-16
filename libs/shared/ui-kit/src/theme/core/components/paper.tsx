@@ -14,9 +14,21 @@ const MuiPaper: Components<Theme>["MuiPaper"] = {
    * STYLE
    *************************************** */
   styleOverrides: {
-    root: { backgroundImage: "none" },
+    root: ({ theme }) => ({
+      backgroundImage: "none",
+      backgroundColor: theme.palette.mode === 'dark'
+        ? theme.palette.background.paper
+        : theme.palette.background.paper,
+    }),
     outlined: ({ theme }) => ({
-      borderColor: varAlpha(theme.palette.grey["500Channel"], 0.16),
+      borderColor: theme.palette.mode === 'dark'
+        ? theme.palette.grey[800]
+        : varAlpha(theme.palette.grey["500Channel"], 0.16),
+    }),
+    elevation1: ({ theme }) => ({
+      boxShadow: theme.palette.mode === 'dark'
+        ? `0 1px 3px ${varAlpha(theme.palette.common.black, 0.3)}`
+        : theme.shadows[1],
     }),
   },
 };

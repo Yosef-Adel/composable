@@ -7,7 +7,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { CustomBreadcrumbs } from './CustomBreadcrumbs';
 
 const meta = {
-  title: 'Components/CustomBreadcrumbs',
+  title: 'Components/Navigation/CustomBreadcrumbs',
   component: CustomBreadcrumbs,
   parameters: {
     layout: 'padded',

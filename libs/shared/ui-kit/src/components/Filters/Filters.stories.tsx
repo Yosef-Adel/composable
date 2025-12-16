@@ -4,7 +4,7 @@ import { Box, Chip, Stack, Select, MenuItem, FormControl, InputLabel } from '@mu
 import { FiltersBlock, FiltersResult, chipProps } from './index';
 
 const meta = {
-  title: 'Components/Filters',
+  title: 'Components/Data Display/Filters',
   parameters: {
     layout: 'padded',
   },

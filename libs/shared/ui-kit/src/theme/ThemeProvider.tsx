@@ -37,7 +37,7 @@ interface ThemeProviderProps {
 export function ThemeProvider({ children, forcedMode }: ThemeProviderProps) {
   const [mode, setMode] = useState<ColorMode>(() => {
     const saved = localStorage.getItem("theme-mode");
-    return (saved as ColorMode) || "light";
+    return (saved as ColorMode) || "dark";
   });
 
   // Only persist mode if user-not-forced

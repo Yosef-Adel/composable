@@ -4,7 +4,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { CustomPopover, usePopover } from './index';
 
 const meta = {
-  title: 'Components/CustomPopover',
+  title: 'Components/Utils/CustomPopover',
   component: CustomPopover,
   parameters: {
     layout: 'centered',

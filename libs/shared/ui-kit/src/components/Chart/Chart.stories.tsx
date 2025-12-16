@@ -3,7 +3,7 @@ import { Card, CardHeader, CardContent, Box } from '@mui/material';
 import { Chart, useChart, ChartLegends, ChartLoading } from './index';
 
 const meta = {
-  title: 'Components/Chart',
+  title: 'Components/Data Display/Chart',
   component: Chart,
   parameters: {
     layout: 'padded',

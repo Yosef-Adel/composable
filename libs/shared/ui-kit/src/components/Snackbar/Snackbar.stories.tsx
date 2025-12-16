@@ -5,7 +5,7 @@ import { Snackbar } from "./Snackbar";
 import { useState } from "react";
 
 const meta = {
-  title: "Components/Snackbar",
+  title: "Components/Feedback/Snackbar",
   component: Snackbar,
   parameters: {
     layout: "centered",

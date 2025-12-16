@@ -176,7 +176,7 @@ function LoadingTable() {
 
 // Stories
 const meta = {
-  title: 'Components/Table',
+  title: 'Components/Data Display/Table',
   component: UserTable,
   parameters: {
     layout: 'padded',

@@ -13,12 +13,23 @@ const MuiAccordion: Components<Theme>["MuiAccordion"] = {
   styleOverrides: {
     root: ({ theme }) => ({
       backgroundColor: "transparent",
+      borderRadius: theme.shape.borderRadius * 1.5,
+      border: theme.palette.mode === 'dark'
+        ? `1px solid ${theme.palette.grey[800]}`
+        : `1px solid ${theme.palette.grey[300]}`,
+      marginBottom: theme.spacing(1),
+      '&:before': {
+        display: 'none',
+      },
       [`&.${accordionClasses.expanded}`]: {
         boxShadow: theme.customShadows.z8,
-        borderRadius: theme.shape.borderRadius,
         backgroundColor: theme.palette.background.paper,
+        margin: theme.spacing(1, 0),
       },
-      [`&.${accordionClasses.disabled}`]: { backgroundColor: "transparent" },
+      [`&.${accordionClasses.disabled}`]: {
+        backgroundColor: "transparent",
+        opacity: 0.5,
+      },
     }),
   },
 };

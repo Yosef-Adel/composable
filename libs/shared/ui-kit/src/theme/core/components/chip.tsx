@@ -5,7 +5,27 @@ export const chip: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }) => ({
         fontWeight: 500,
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: theme.shape.borderRadius * 1.5,
+        fontSize: '0.8125rem',
+        height: '28px',
+      }),
+      filled: ({ theme }) => ({
+        backgroundColor: theme.palette.mode === 'dark'
+          ? theme.palette.grey[800]
+          : theme.palette.grey[200],
+      }),
+      filledPrimary: ({ theme }) => ({
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText,
+        '&:hover': {
+          backgroundColor: theme.palette.primary.dark,
+        },
+      }),
+      outlined: ({ theme }) => ({
+        borderColor: theme.palette.mode === 'dark'
+          ? theme.palette.grey[700]
+          : theme.palette.grey[300],
+        borderWidth: '1.5px',
       }),
     },
   },

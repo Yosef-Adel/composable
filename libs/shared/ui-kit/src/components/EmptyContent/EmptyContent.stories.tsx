@@ -3,7 +3,7 @@ import { EmptyContent } from './EmptyContent';
 import { Button } from '../Button';
 
 const meta = {
-  title: 'Components/EmptyContent',
+  title: 'Components/Feedback/EmptyContent',
   component: EmptyContent,
   parameters: {
     layout: 'padded',

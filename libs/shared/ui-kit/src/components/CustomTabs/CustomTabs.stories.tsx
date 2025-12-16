@@ -8,7 +8,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { CustomTabs } from './CustomTabs';
 
 const meta = {
-  title: 'Components/CustomTabs',
+  title: 'Components/Navigation/CustomTabs',
   component: CustomTabs,
   parameters: {
     layout: 'padded',

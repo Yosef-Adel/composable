@@ -5,7 +5,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { SearchNotFound } from './SearchNotFound';
 
 const meta = {
-  title: 'Components/SearchNotFound',
+  title: 'Components/Feedback/SearchNotFound',
   component: SearchNotFound,
   parameters: {
     layout: 'centered',
