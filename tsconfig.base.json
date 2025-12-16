@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@inventory/shared-items": [
+        "./libs/shared/items/src"
+      ],
+      "@inventory/shared-sales": [
+        "./libs/shared/sales/src"
+      ],
+      "@inventory/shared-inventory": [
+        "./libs/shared/inventory/src"
+      ],
+      "@inventory/shared-purchases": [
+        "./libs/shared/purchases/src"
+      ],
+      "@inventory/shared-util": [
+        "./libs/shared/util/src"
+      ],
+      "@inventory/shared-theme": [
+        "./libs/shared/theme/src"
+      ]
+    }
+  }
+}
