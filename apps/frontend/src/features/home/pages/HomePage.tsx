@@ -8,7 +8,7 @@ export function HomePage() {
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
-      navigate('/dashboard');
+      navigate('/projects');
     } else {
       navigate('/auth');
     }

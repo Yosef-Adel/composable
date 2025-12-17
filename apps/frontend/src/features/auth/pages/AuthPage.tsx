@@ -47,16 +47,16 @@ export function AuthPage() {
       );
     }
 
-    // Navigate to dashboard after login/signup
+    // Navigate to projects after login/signup
     setTimeout(() => {
-      navigate('/dashboard');
+      navigate('/projects');
     }, 600);
   };
 
   const handleDemoLogin = () => {
     dispatch(demoLogin());
     setTimeout(() => {
-      navigate('/dashboard');
+      navigate('/projects');
     }, 300);
   };
 

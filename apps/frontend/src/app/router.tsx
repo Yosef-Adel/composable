@@ -1,8 +1,8 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { RootLayout } from './layouts/RootLayout';
 import { HomePage } from '../features/home/pages/HomePage';
-import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { AuthPage } from '../features/auth/pages/AuthPage';
+import { ProjectsPage } from '../features/projects/pages/ProjectsPage';
+import { DashboardPage } from '../features/composer/pages/DashboardPage';
 import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
 
 export const router = createBrowserRouter([
@@ -15,37 +15,19 @@ export const router = createBrowserRouter([
     element: <AuthPage />,
   },
   {
-    path: '/dashboard',
+    path: '/projects',
     element: (
       <ProtectedRoute>
-        <RootLayout />
+        <ProjectsPage />
       </ProtectedRoute>
     ),
-    children: [
-      {
-        index: true,
-        element: <DashboardPage />,
-      },
-      {
-        path: 'stacks',
-        element: <div>Stacks - Coming Soon</div>,
-      },
-      {
-        path: 'services',
-        element: <div>Services - Coming Soon</div>,
-      },
-      {
-        path: 'templates',
-        element: <div>Templates - Coming Soon</div>,
-      },
-      {
-        path: 'deployments',
-        element: <div>Deployments - Coming Soon</div>,
-      },
-      {
-        path: 'secrets',
-        element: <div>Secrets - Coming Soon</div>,
-      },
-    ],
+  },
+  {
+    path: '/dashboard/:projectId',
+    element: (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    ),
   },
 ]);
