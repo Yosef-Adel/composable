@@ -1,56 +1,49 @@
-import {
-  Home,
-  Inventory,
-  ShoppingCart,
-  Assessment,
-  Category,
-  LocalShipping,
-} from '@mui/icons-material';
+import { Iconify } from '@composable/ui-kit';
 import type { NavSectionData } from './layouts/types';
 
 export const navConfig: NavSectionData[] = [
   {
-    subheader: 'General',
+    subheader: 'Overview',
     items: [
       {
-        title: 'Home',
-        path: '/',
-        icon: <Home />,
+        title: 'Dashboard',
+        path: '/dashboard',
+        icon: <Iconify icon="solar:home-bold-duotone" width={24} />,
       },
     ],
   },
   {
-    subheader: 'Management',
+    subheader: 'Build',
     items: [
       {
-        title: 'Items',
-        path: '/items',
-        icon: <Category />,
+        title: 'Stacks',
+        path: '/stacks',
+        icon: <Iconify icon="solar:layers-bold-duotone" width={24} />,
       },
       {
-        title: 'Inventory',
-        path: '/inventory',
-        icon: <Inventory />,
+        title: 'Services',
+        path: '/services',
+        icon: <Iconify icon="solar:server-bold-duotone" width={24} />,
       },
       {
-        title: 'Sales',
-        path: '/sales',
-        icon: <ShoppingCart />,
-      },
-      {
-        title: 'Purchases',
-        path: '/purchases',
-        icon: <LocalShipping />,
+        title: 'Templates',
+        path: '/templates',
+        icon: <Iconify icon="solar:document-bold-duotone" width={24} />,
       },
     ],
   },
   {
-    subheader: 'Analytics',
+    subheader: 'Deploy',
     items: [
       {
-        title: 'Reports',
-        path: '/reports',
-        icon: <Assessment />,
+        title: 'Deployments',
+        path: '/deployments',
+        icon: <Iconify icon="solar:rocket-bold-duotone" width={24} />,
+      },
+      {
+        title: 'Secrets',
+        path: '/secrets',
+        icon: <Iconify icon="solar:lock-keyhole-bold-duotone" width={24} />,
       },
     ],
   },

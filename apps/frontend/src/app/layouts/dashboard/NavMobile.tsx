@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Drawer, Box, Typography } from '@mui/material';
 import { useLocation } from 'react-router-dom';
+import { Iconify } from '@composable/ui-kit';
 import { NavSection } from './NavSection';
 import type { NavSectionProps } from '../types';
 
@@ -31,8 +32,23 @@ export function NavMobile({ data, open, onClose }: NavMobileProps) {
         },
       }}
     >
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">Inventory System</Typography>
+      <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box
+          sx={{
+            width: 40,
+            height: 40,
+            background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+            borderRadius: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Iconify icon="solar:box-bold" width={24} sx={{ color: 'white' }} />
+        </Box>
+        <Typography variant="h6" sx={{ letterSpacing: '-0.02em' }}>
+          Composable
+        </Typography>
       </Box>
 
       <NavSection data={data} />
