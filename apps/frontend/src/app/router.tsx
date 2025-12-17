@@ -2,6 +2,8 @@ import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from './layouts/RootLayout';
 import { HomePage } from '../features/home/pages/HomePage';
 import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
+import { AuthPage } from '../features/auth/pages/AuthPage';
+import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
@@ -9,32 +11,40 @@ export const router = createBrowserRouter([
     element: <HomePage />,
   },
   {
+    path: '/auth',
+    element: <AuthPage />,
+  },
+  {
     path: '/dashboard',
-    element: <RootLayout />,
+    element: (
+      <ProtectedRoute>
+        <RootLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
-        element: <DashboardPage />
+        element: <DashboardPage />,
       },
       {
         path: 'stacks',
-        element: <div>Stacks - Coming Soon</div>
+        element: <div>Stacks - Coming Soon</div>,
       },
       {
         path: 'services',
-        element: <div>Services - Coming Soon</div>
+        element: <div>Services - Coming Soon</div>,
       },
       {
         path: 'templates',
-        element: <div>Templates - Coming Soon</div>
+        element: <div>Templates - Coming Soon</div>,
       },
       {
         path: 'deployments',
-        element: <div>Deployments - Coming Soon</div>
+        element: <div>Deployments - Coming Soon</div>,
       },
       {
         path: 'secrets',
-        element: <div>Secrets - Coming Soon</div>
+        element: <div>Secrets - Coming Soon</div>,
       },
     ],
   },
