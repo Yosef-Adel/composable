@@ -42,6 +42,7 @@ import { YamlPanel } from '../components/YamlPanel';
 import { ValidationPanel } from '../components/ValidationPanel';
 import { ShareDialog } from '../components/ShareDialog';
 import { generateYaml } from '../utils/yamlGenerator';
+import { generateDocs } from '../utils/docsGenerator';
 import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
 import type { BuildingBlockType, ServiceConfig } from '../types';
 import { HANDLE_IDS } from '../components/ServiceNode';
@@ -337,6 +338,26 @@ function DashboardPageInner() {
               sx={{ borderColor: 'grey.700', color: 'grey.300' }}
             >
               Copy
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Iconify icon="solar:document-text-bold" width={16} />}
+              onClick={() => {
+                const docs = generateDocs(nodeConfigs, edges, projectName);
+                const blob = new Blob([docs], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'README.md';
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              disabled={Object.keys(nodeConfigs).length === 0}
+              sx={{ borderColor: 'grey.700', color: 'grey.300' }}
+            >
+              Docs
             </Button>
 
             <Button
