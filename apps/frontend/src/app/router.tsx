@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PageLoader } from './components/PageLoader';
@@ -28,8 +28,9 @@ const SharedViewPage = lazy(() =>
 );
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   return (
-    <ErrorBoundary>
+    <ErrorBoundary resetKey={location.pathname}>
       <Suspense fallback={<PageLoader />}>{children}</Suspense>
     </ErrorBoundary>
   );

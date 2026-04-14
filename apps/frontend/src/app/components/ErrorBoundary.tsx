@@ -4,6 +4,8 @@ import { Box, Button, Typography } from '@mui/material';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  /** Pass current location key so boundary resets on navigation */
+  resetKey?: string;
 }
 
 interface State {
@@ -21,12 +23,23 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[ErrorBoundary]', error, errorInfo);
   }
 
   handleReset = () => {
     this.setState({ hasError: false, error: null });
+  };
+
+  handleGoBack = () => {
+    this.setState({ hasError: false, error: null });
+    window.history.back();
   };
 
   render() {
@@ -52,9 +65,14 @@ export class ErrorBoundary extends Component<Props, State> {
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 500 }}>
             {this.state.error?.message || 'An unexpected error occurred.'}
           </Typography>
-          <Button variant="outlined" onClick={this.handleReset} sx={{ mt: 1 }}>
-            Try Again
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1.5, mt: 1 }}>
+            <Button variant="outlined" onClick={this.handleGoBack}>
+              Go Back
+            </Button>
+            <Button variant="contained" onClick={this.handleReset}>
+              Try Again
+            </Button>
+          </Box>
         </Box>
       );
     }
