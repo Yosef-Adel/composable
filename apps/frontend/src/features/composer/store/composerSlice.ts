@@ -261,23 +261,31 @@ const composerSlice = createSlice({
     loadProjectData: (state, action: PayloadAction<PersistedComposerData>) => {
       const { nodes: rawNodes, edges, nodeConfigs } = action.payload;
 
-      // Ensure every node has a valid position (guards against corrupted data)
-      state.nodes = (rawNodes ?? []).map((node, i) => ({
-        ...node,
-        position: node.position && typeof node.position.x === 'number'
-          ? node.position
-          : { x: 100 + (i % 4) * 250, y: 100 + Math.floor(i / 4) * 200 },
-      }));
       state.edges = edges ?? [];
       state.nodeConfigs = nodeConfigs ?? {};
       state.selectedNodeId = null;
+      state.history = [];
+      state.historyIndex = -1;
 
-      // Rebuild node data from configs to ensure display is current
-      for (const node of state.nodes) {
-        const cfg = state.nodeConfigs[node.id];
-        if (cfg) {
-          node.data = buildNodeData(cfg);
-        }
+      const validNodes = (rawNodes ?? []).filter((n) => n && n.id);
+
+      // If nodes array is empty/missing but nodeConfigs has data, reconstruct nodes
+      if (validNodes.length === 0 && Object.keys(state.nodeConfigs).length > 0) {
+        state.nodes = Object.entries(state.nodeConfigs).map(([id, cfg], i) => ({
+          id,
+          type: cfg.type,
+          position: { x: 100 + (i % 4) * 250, y: 100 + Math.floor(i / 4) * 200 },
+          data: buildNodeData(cfg),
+        }));
+      } else {
+        state.nodes = validNodes.map((node, i) => ({
+          ...node,
+          type: node.type || state.nodeConfigs[node.id]?.type || 'service',
+          position: node.position && typeof node.position.x === 'number'
+            ? node.position
+            : { x: 100 + (i % 4) * 250, y: 100 + Math.floor(i / 4) * 200 },
+          data: buildNodeData(state.nodeConfigs[node.id] ?? { type: 'service', name: node.id }),
+        }));
       }
     },
 

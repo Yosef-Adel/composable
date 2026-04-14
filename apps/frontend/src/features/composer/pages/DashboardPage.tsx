@@ -95,6 +95,11 @@ function DashboardPageInner() {
         setProjectName(project.name ?? 'Composable');
 
         const composerData = project.composerData;
+        console.debug('[Composer] Loading project data:', {
+          nodesCount: composerData?.nodes?.length ?? 0,
+          edgesCount: composerData?.edges?.length ?? 0,
+          nodeConfigsCount: Object.keys(composerData?.nodeConfigs ?? {}).length,
+        });
         dispatch(
           loadProjectData({
             nodes: composerData?.nodes ?? [],
