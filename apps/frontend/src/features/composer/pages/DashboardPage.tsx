@@ -32,6 +32,7 @@ import {
   setSelectedNode,
   setNodes,
   loadProjectData,
+  clearComposer,
   undo,
   redo,
 } from '../store/composerSlice';
@@ -83,6 +84,10 @@ function DashboardPageInner() {
   // Load composer data from backend
   useEffect(() => {
     if (!projectId) return;
+
+    // Reset loaded flag on each mount / projectId change
+    isLoadedRef.current = false;
+
     (async () => {
       try {
         const { data: projResp } = await api.get(`/projects/${projectId}`);
@@ -90,20 +95,30 @@ function DashboardPageInner() {
         setProjectName(project.name ?? 'Composable');
 
         const composerData = project.composerData;
-        if (composerData) {
-          dispatch(
-            loadProjectData({
-              nodes: composerData.nodes ?? [],
-              edges: composerData.edges ?? [],
-              nodeConfigs: composerData.nodeConfigs ?? {},
-            }),
-          );
-        }
-        isLoadedRef.current = true;
+        dispatch(
+          loadProjectData({
+            nodes: composerData?.nodes ?? [],
+            edges: composerData?.edges ?? [],
+            nodeConfigs: composerData?.nodeConfigs ?? {},
+          }),
+        );
+
+        // Allow auto-save only after data is fully loaded into Redux
+        // Use a short delay to skip the auto-save effect triggered by loadProjectData
+        setTimeout(() => {
+          isLoadedRef.current = true;
+        }, 100);
       } catch {
         // Project not found or unauthorized
       }
     })();
+
+    // Clear composer state when leaving the page
+    return () => {
+      isLoadedRef.current = false;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      dispatch(clearComposer());
+    };
   }, [projectId, dispatch]);
 
   // Debounced auto-save (2 seconds after last change)
