@@ -24,10 +24,30 @@ const initialState: ComposerState = {
   nodeConfigs: {},
   selectedNodeId: null,
   isLoading: false,
+  history: [],
+  historyIndex: -1,
 };
+
+const MAX_HISTORY = 50;
 
 function generateNodeId(): string {
   return crypto.randomUUID();
+}
+
+// Save a snapshot for undo/redo (call before mutating)
+function pushHistory(state: ComposerState) {
+  const snapshot = {
+    nodes: JSON.parse(JSON.stringify(state.nodes)),
+    edges: JSON.parse(JSON.stringify(state.edges)),
+    nodeConfigs: JSON.parse(JSON.stringify(state.nodeConfigs)),
+  };
+  // Truncate any forward history
+  state.history = state.history.slice(0, state.historyIndex + 1);
+  state.history.push(snapshot);
+  if (state.history.length > MAX_HISTORY) {
+    state.history.shift();
+  }
+  state.historyIndex = state.history.length - 1;
 }
 
 // Derive connection type from handle IDs
@@ -72,6 +92,11 @@ const composerSlice = createSlice({
         .filter((c): c is NodeChange & { type: 'remove' } => c.type === 'remove')
         .map((c) => c.id);
 
+      // Only push history for structural changes (remove), not drag/select
+      if (removedIds.length > 0) {
+        pushHistory(state);
+      }
+
       state.nodes = applyNodeChanges(changes, state.nodes) as Node[];
 
       if (removedIds.length > 0) {
@@ -113,6 +138,8 @@ const composerSlice = createSlice({
       );
       if (exists) return;
 
+      pushHistory(state);
+
       const newEdge: Edge = {
         ...conn,
         id: `e-${conn.source}-${conn.sourceHandle}-${conn.target}-${conn.targetHandle}`,
@@ -132,6 +159,8 @@ const composerSlice = createSlice({
     ) => {
       const { blockType, position, template } = action.payload;
       const id = generateNodeId();
+
+      pushHistory(state);
 
       let config: NodeConfig;
 
@@ -191,6 +220,7 @@ const composerSlice = createSlice({
 
     deleteNode: (state, action: PayloadAction<string>) => {
       const nodeId = action.payload;
+      pushHistory(state);
       state.nodes = state.nodes.filter((n) => n.id !== nodeId);
       state.edges = state.edges.filter(
         (e) => e.source !== nodeId && e.target !== nodeId
@@ -208,6 +238,8 @@ const composerSlice = createSlice({
       const { nodeId, config } = action.payload;
       const existing = state.nodeConfigs[nodeId];
       if (!existing) return;
+
+      pushHistory(state);
 
       state.nodeConfigs[nodeId] = { ...existing, ...config } as NodeConfig;
 
@@ -249,7 +281,34 @@ const composerSlice = createSlice({
     },
 
     setNodes: (state, action: PayloadAction<Node[]>) => {
+      pushHistory(state);
       state.nodes = action.payload;
+    },
+
+    undo: (state) => {
+      if (state.historyIndex < 0) return;
+      const snapshot = state.history[state.historyIndex];
+      // Save current state as forward history if at the end
+      if (state.historyIndex === state.history.length - 1) {
+        state.history.push({
+          nodes: JSON.parse(JSON.stringify(state.nodes)),
+          edges: JSON.parse(JSON.stringify(state.edges)),
+          nodeConfigs: JSON.parse(JSON.stringify(state.nodeConfigs)),
+        });
+      }
+      state.nodes = snapshot.nodes;
+      state.edges = snapshot.edges;
+      state.nodeConfigs = snapshot.nodeConfigs;
+      state.historyIndex -= 1;
+    },
+
+    redo: (state) => {
+      if (state.historyIndex >= state.history.length - 2) return;
+      state.historyIndex += 1;
+      const snapshot = state.history[state.historyIndex + 1];
+      state.nodes = snapshot.nodes;
+      state.edges = snapshot.edges;
+      state.nodeConfigs = snapshot.nodeConfigs;
     },
   },
 });
@@ -265,6 +324,8 @@ export const {
   loadProjectData,
   clearComposer,
   setNodes,
+  undo,
+  redo,
 } = composerSlice.actions;
 
 export default composerSlice.reducer;

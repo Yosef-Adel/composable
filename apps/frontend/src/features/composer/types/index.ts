@@ -42,6 +42,9 @@ export interface ComposerState {
   nodeConfigs: Record<string, NodeConfig>;
   selectedNodeId: string | null;
   isLoading: boolean;
+  // Undo/redo
+  history: Array<{ nodes: Node[]; edges: Edge[]; nodeConfigs: Record<string, NodeConfig> }>;
+  historyIndex: number;
 }
 
 export type BuildingBlockType = 'service' | 'volume' | 'network' | 'environment';

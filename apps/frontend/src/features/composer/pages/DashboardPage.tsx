@@ -32,6 +32,8 @@ import {
   setSelectedNode,
   setNodes,
   loadProjectData,
+  undo,
+  redo,
 } from '../store/composerSlice';
 import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
@@ -208,24 +210,39 @@ function DashboardPageInner() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Ctrl+S — save (auto-save handles this, but trigger immediate save)
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        if (projectId) {
-          api
-            .put(`/projects/${projectId}/composer`, {
-              nodes,
-              edges,
-              nodeConfigs,
-              nodeCount: nodes.length,
-            })
-            .catch(() => {});
-        }
+      if (!(e.ctrlKey || e.metaKey)) return;
+
+      switch (e.key) {
+        case 's':
+          e.preventDefault();
+          if (projectId) {
+            api
+              .put(`/projects/${projectId}/composer`, {
+                nodes,
+                edges,
+                nodeConfigs,
+                nodeCount: nodes.length,
+              })
+              .catch(() => {});
+          }
+          break;
+        case 'z':
+          e.preventDefault();
+          if (e.shiftKey) {
+            dispatch(redo());
+          } else {
+            dispatch(undo());
+          }
+          break;
+        case 'y':
+          e.preventDefault();
+          dispatch(redo());
+          break;
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [projectId, nodes, edges, nodeConfigs]);
+  }, [projectId, nodes, edges, nodeConfigs, dispatch]);
 
   // ── Render ──────────────────────────────────────────────────────
 
