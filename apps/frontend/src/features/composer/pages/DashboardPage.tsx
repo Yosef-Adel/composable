@@ -38,7 +38,6 @@ import {
   applyEdgeChangesAction,
   addConnection,
   setSelectedNode,
-  setNodes,
   loadProjectData,
   clearComposer,
   undo,
