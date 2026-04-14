@@ -13,6 +13,7 @@ export interface AuthState {
   error: string | null;
   requiresVerification: boolean;
   pendingUserId: string | null;
+  pendingEmail: string | null;
 }
 
 export interface LoginCredentials {
@@ -27,7 +28,7 @@ export interface SignupCredentials {
   confirmPassword: string;
 }
 
-export type AuthMode = 'login' | 'signup';
+export type AuthMode = 'login' | 'signup' | 'verify';
 
 export interface AuthFormData {
   name: string;

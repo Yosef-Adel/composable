@@ -80,6 +80,13 @@ export class MailService {
       html = `<h1>Verify Your Email</h1><p>Your OTP: <strong>${otp}</strong></p><p>Expires in 10 minutes.</p>`;
     }
 
+    if (!this.transporter) {
+      this.logger.warn(
+        `[DEV] SMTP not configured. OTP for ${email}: ${otp}`,
+      );
+      return false;
+    }
+
     return this.sendEmail({
       to: email,
       subject: 'Email Verification - Composable',

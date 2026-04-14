@@ -335,8 +335,14 @@ export class AuthService {
 
     // Send OTP via email
     try {
-      await this.mailService.sendVerificationEmail(user.email, otp);
-      this.logger.log(`OTP sent to ${user.email}`);
+      const sent = await this.mailService.sendVerificationEmail(user.email, otp);
+      if (sent) {
+        this.logger.log(`OTP sent to ${user.email}`);
+      } else {
+        this.logger.warn(
+          `OTP generated for ${user.email} but email not delivered (SMTP not configured). Check server logs for the OTP.`,
+        );
+      }
     } catch (error) {
       this.logger.error(`Failed to send OTP to ${user.email}:`, error);
       throw new BadRequestException('Failed to send verification email');
