@@ -71,6 +71,9 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           <Button
             variant="outlined"
             size="large"
+            onClick={() => {
+              document.getElementById('demo-preview')?.scrollIntoView({ behavior: 'smooth' });
+            }}
             sx={{
               px: 4,
               py: 1.5,
@@ -87,7 +90,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           </Button>
         </Box>
 
-        <Box sx={{ mt: 8, position: 'relative' }}>
+        <Box id="demo-preview" sx={{ mt: 8, position: 'relative' }}>
           <Box
             sx={{
               position: 'absolute',
