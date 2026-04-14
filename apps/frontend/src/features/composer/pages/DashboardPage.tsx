@@ -20,10 +20,6 @@ import {
   Typography,
   Button,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
@@ -39,6 +35,7 @@ import {
 import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
+import { YamlPanel } from '../components/YamlPanel';
 import { generateYaml } from '../utils/yamlGenerator';
 import type { BuildingBlockType, ServiceConfig } from '../types';
 import { HANDLE_IDS } from '../components/ServiceNode';
@@ -61,7 +58,7 @@ function DashboardPageInner() {
   const edges = useAppSelector((state) => state.composer.edges);
   const nodeConfigs = useAppSelector((state) => state.composer.nodeConfigs);
 
-  const [showYamlDialog, setShowYamlDialog] = useState(false);
+  const [showYamlPanel, setShowYamlPanel] = useState(false);
   const [projectName, setProjectName] = useState('Composable');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadedRef = useRef(false);
@@ -191,17 +188,6 @@ function DashboardPageInner() {
     [nodeConfigs]
   );
 
-  const handleDownloadYaml = useCallback(() => {
-    if (!yamlContent) return;
-    const blob = new Blob([yamlContent], { type: 'text/yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'docker-compose.yml';
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [yamlContent]);
-
   const handleFitView = useCallback(() => {
     reactFlowInstance.fitView({ padding: 0.2, duration: 300 });
   }, [reactFlowInstance]);
@@ -277,24 +263,27 @@ function DashboardPageInner() {
             </IconButton>
 
             <Button
-              variant="outlined"
+              variant={showYamlPanel ? 'contained' : 'outlined'}
               size="small"
               startIcon={<Iconify icon="solar:code-bold" width={16} />}
-              onClick={() => setShowYamlDialog(true)}
-              sx={{ borderColor: 'grey.700', color: 'grey.300' }}
+              onClick={() => setShowYamlPanel((v) => !v)}
+              sx={showYamlPanel
+                ? { background: 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)' }
+                : { borderColor: 'grey.700', color: 'grey.300' }
+              }
             >
-              View YAML
+              YAML
             </Button>
 
             <Button
               variant="outlined"
               size="small"
-              startIcon={<Iconify icon="solar:download-bold" width={16} />}
-              onClick={handleDownloadYaml}
+              startIcon={<Iconify icon="solar:copy-bold" width={16} />}
+              onClick={() => yamlContent && navigator.clipboard.writeText(yamlContent)}
               disabled={!yamlContent}
               sx={{ borderColor: 'grey.700', color: 'grey.300' }}
             >
-              Download
+              Copy
             </Button>
 
             <Button
@@ -377,57 +366,10 @@ function DashboardPageInner() {
 
         {/* Right: Properties Panel */}
         <PropertiesPanel />
-      </Box>
 
-      {/* YAML Preview Dialog */}
-      <Dialog
-        open={showYamlDialog}
-        onClose={() => setShowYamlDialog(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: 'rgba(30, 41, 59, 0.95)',
-            backdropFilter: 'blur(16px)',
-            border: 1,
-            borderColor: 'grey.700',
-          },
-        }}
-      >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Iconify icon="solar:code-bold" width={24} />
-            docker-compose.yml
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Box
-            component="pre"
-            sx={{
-              p: 2,
-              bgcolor: 'rgba(15, 23, 42, 0.8)',
-              borderRadius: 1,
-              overflow: 'auto',
-              fontSize: '0.875rem',
-              fontFamily: 'monospace',
-              border: 1,
-              borderColor: 'grey.700',
-            }}
-          >
-            {yamlContent || '# No services added yet'}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowYamlDialog(false)}>Close</Button>
-          <Button
-            onClick={handleDownloadYaml}
-            variant="contained"
-            startIcon={<Iconify icon="solar:download-bold" width={16} />}
-          >
-            Download
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {/* YAML Panel (Monaco Editor) */}
+        <YamlPanel yaml={yamlContent} open={showYamlPanel} onClose={() => setShowYamlPanel(false)} />
+      </Box>
     </Box>
   );
 }
