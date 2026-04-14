@@ -50,6 +50,7 @@ import { ShareDialog } from '../components/ShareDialog';
 import { ProjectSettingsDialog } from '../components/ProjectSettingsDialog';
 import { VersionHistoryPanel } from '../components/VersionHistoryPanel';
 import { ResizeHandle } from '../components/ResizeHandle';
+import { OnboardingTour } from '../components/OnboardingTour';
 import { generateYaml } from '../utils/yamlGenerator';
 import { generateDocs } from '../utils/docsGenerator';
 import { parseDockerCompose } from '../utils/yamlImporter';
@@ -88,6 +89,8 @@ function DashboardPageInner() {
   const [isLoading, setIsLoading] = useState(true);
   const [leftPanelWidth, setLeftPanelWidth] = useState(280);
   const [rightPanelWidth, setRightPanelWidth] = useState(320);
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
   const [yamlPanelWidth, setYamlPanelWidth] = useState(420);
   const [validationPanelWidth, setValidationPanelWidth] = useState(360);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -418,7 +421,7 @@ function DashboardPageInner() {
           borderColor: 'grey.800',
         }}
       >
-        <Toolbar>
+        <Toolbar id="onboarding-toolbar">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box
               sx={{
@@ -625,11 +628,43 @@ function DashboardPageInner() {
       {/* Main Content */}
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* Left: Service Palette */}
-        <ServicePalette onAddService={handleAddService} onAddStack={handleAddStack} width={leftPanelWidth} />
-        <ResizeHandle side="right" width={leftPanelWidth} onResize={setLeftPanelWidth} minWidth={200} maxWidth={450} />
+        {leftCollapsed ? (
+          <Box
+            id="onboarding-left-panel"
+            sx={{
+              width: 40,
+              borderRight: 1,
+              borderColor: 'grey.800',
+              bgcolor: 'rgba(15, 23, 42, 0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              pt: 1,
+              flexShrink: 0,
+            }}
+          >
+            <IconButton size="small" onClick={() => setLeftCollapsed(false)} sx={{ color: 'grey.400' }}>
+              <Iconify icon="solar:alt-arrow-right-bold" width={18} />
+            </IconButton>
+          </Box>
+        ) : (
+          <>
+            <Box id="onboarding-left-panel" sx={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
+              <ServicePalette onAddService={handleAddService} onAddStack={handleAddStack} width={leftPanelWidth} />
+              <IconButton
+                size="small"
+                onClick={() => setLeftCollapsed(true)}
+                sx={{ position: 'absolute', top: 8, right: 4, color: 'grey.400', zIndex: 1 }}
+              >
+                <Iconify icon="solar:alt-arrow-left-bold" width={18} />
+              </IconButton>
+            </Box>
+            <ResizeHandle side="right" width={leftPanelWidth} onResize={setLeftPanelWidth} minWidth={200} maxWidth={450} />
+          </>
+        )}
 
         {/* Center: ReactFlow Canvas */}
-        <Box sx={{ flex: 1, position: 'relative', minWidth: 0 }}>
+        <Box id="onboarding-canvas" sx={{ flex: 1, position: 'relative', minWidth: 0 }}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -712,8 +747,40 @@ function DashboardPageInner() {
         </Box>
 
         {/* Right: Properties Panel */}
-        <ResizeHandle side="left" width={rightPanelWidth} onResize={setRightPanelWidth} minWidth={240} maxWidth={500} />
-        <PropertiesPanel width={rightPanelWidth} />
+        {rightCollapsed ? (
+          <Box
+            id="onboarding-right-panel"
+            sx={{
+              width: 40,
+              borderLeft: 1,
+              borderColor: 'grey.800',
+              bgcolor: 'rgba(15, 23, 42, 0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              pt: 1,
+              flexShrink: 0,
+            }}
+          >
+            <IconButton size="small" onClick={() => setRightCollapsed(false)} sx={{ color: 'grey.400' }}>
+              <Iconify icon="solar:alt-arrow-left-bold" width={18} />
+            </IconButton>
+          </Box>
+        ) : (
+          <>
+            <ResizeHandle side="left" width={rightPanelWidth} onResize={setRightPanelWidth} minWidth={240} maxWidth={500} />
+            <Box id="onboarding-right-panel" sx={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
+              <IconButton
+                size="small"
+                onClick={() => setRightCollapsed(true)}
+                sx={{ position: 'absolute', top: 8, left: 4, color: 'grey.400', zIndex: 1 }}
+              >
+                <Iconify icon="solar:alt-arrow-right-bold" width={18} />
+              </IconButton>
+              <PropertiesPanel width={rightPanelWidth} />
+            </Box>
+          </>
+        )}
 
         {/* YAML Panel (Monaco Editor) */}
         {showYamlPanel && (
@@ -756,6 +823,9 @@ function DashboardPageInner() {
           projectId={projectId}
         />
       )}
+
+      {/* Onboarding Tour */}
+      {!isLoading && <OnboardingTour />}
     </Box>
   );
 }

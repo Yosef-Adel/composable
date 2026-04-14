@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Box,
   Typography,
@@ -14,6 +14,7 @@ import {
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { updateNodeConfig, deleteNode, setSelectedNode } from '../store/composerSlice';
+import { SaveTemplateDialog } from './SaveTemplateDialog';
 import type {
   NodeConfig,
   ServiceConfig,
@@ -50,6 +51,7 @@ export function PropertiesPanel({ width = 320 }: { width?: number }) {
   const dispatch = useAppDispatch();
   const { selectedNodeId, nodeConfigs } = useAppSelector((s) => s.composer);
   const config = selectedNodeId ? nodeConfigs[selectedNodeId] : null;
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
 
   const update = useCallback(
     (partial: Partial<NodeConfig>) => {
@@ -168,8 +170,20 @@ export function PropertiesPanel({ width = 320 }: { width?: number }) {
         {isEnvironment(config) && <EnvironmentFields config={config} update={update} />}
       </Box>
 
-      {/* Footer: Delete */}
-      <Box sx={{ p: 2, borderTop: 1, borderColor: 'grey.800' }}>
+      {/* Footer: Save Template + Delete */}
+      <Box sx={{ p: 2, borderTop: 1, borderColor: 'grey.800', display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {isService(config) && (
+          <Button
+            fullWidth
+            variant="outlined"
+            size="small"
+            startIcon={<Iconify icon="solar:bookmark-bold" width={16} />}
+            onClick={() => setSaveTemplateOpen(true)}
+            sx={{ borderColor: 'grey.700', color: 'grey.300' }}
+          >
+            Save as Template
+          </Button>
+        )}
         <Button
           fullWidth
           variant="outlined"
@@ -181,6 +195,15 @@ export function PropertiesPanel({ width = 320 }: { width?: number }) {
           Delete Node
         </Button>
       </Box>
+
+      {/* Save Template Dialog */}
+      {isService(config) && (
+        <SaveTemplateDialog
+          open={saveTemplateOpen}
+          onClose={() => setSaveTemplateOpen(false)}
+          config={config}
+        />
+      )}
     </Box>
   );
 }

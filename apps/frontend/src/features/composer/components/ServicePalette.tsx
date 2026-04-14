@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
-import { Box, Typography, Paper, TextField, InputAdornment, Divider, Chip, Collapse } from '@mui/material';
+import { useState, useMemo, useCallback } from 'react';
+import { Box, Typography, Paper, TextField, InputAdornment, Divider, Chip, Collapse, IconButton } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import type { BuildingBlockType, ServiceConfig } from '../types';
 import { SERVICE_TEMPLATES, TEMPLATE_CATEGORIES, type ServiceTemplate } from '../data/serviceTemplates';
 import { STACK_TEMPLATES, type StackTemplate } from '../data/stackTemplates';
+import { getCustomTemplates, deleteCustomTemplate } from './SaveTemplateDialog';
 
 interface ServicePaletteProps {
   onAddService: (serviceType: BuildingBlockType, template?: Partial<ServiceConfig>) => void;
@@ -133,6 +134,14 @@ function StackCard({ stack, onClick }: { stack: StackTemplate; onClick: () => vo
 export function ServicePalette({ onAddService, onAddStack, width = 280 }: ServicePaletteProps) {
   const [search, setSearch] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [customVersion, setCustomVersion] = useState(0);
+
+  const customTemplates = useMemo(() => getCustomTemplates(), [customVersion]);
+
+  const handleDeleteCustom = useCallback((id: string) => {
+    deleteCustomTemplate(id);
+    setCustomVersion((v) => v + 1);
+  }, []);
 
   const filteredTemplates = useMemo(() => {
     if (!search.trim()) return SERVICE_TEMPLATES;
@@ -261,6 +270,63 @@ export function ServicePalette({ onAddService, onAddStack, width = 280 }: Servic
           </Box>
         )}
       </Box>
+
+      {/* Custom Templates */}
+      {customTemplates.length > 0 && (
+        <>
+          <Divider sx={{ borderColor: 'grey.800' }} />
+          <Box sx={{ px: 2, py: 1.5 }}>
+            <Box
+              onClick={() => toggleCategory('__custom__')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                mb: 0.5,
+                '&:hover': { '& .cat-label': { color: 'grey.200' } },
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <Typography className="cat-label" variant="caption" sx={{ fontWeight: 600, color: 'warning.light', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em' }}>
+                  Custom
+                </Typography>
+                <Chip label={customTemplates.length} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'rgba(245, 158, 11, 0.12)' }} />
+              </Box>
+              <Iconify
+                icon="solar:alt-arrow-down-line-duotone"
+                width={14}
+                sx={{ color: 'grey.500', transform: expandedCategory === '__custom__' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+              />
+            </Box>
+            <Collapse in={expandedCategory === '__custom__' || !!search.trim()}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                {customTemplates
+                  .filter((t) => {
+                    if (!search.trim()) return true;
+                    const q = search.toLowerCase();
+                    return t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
+                  })
+                  .map((t) => (
+                    <Box key={t.id} sx={{ position: 'relative' }}>
+                      <TemplateCard
+                        template={t}
+                        onClick={() => onAddService('service', t.defaults)}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteCustom(t.id); }}
+                        sx={{ position: 'absolute', top: 4, right: 4, color: 'grey.500', '&:hover': { color: 'error.main' }, p: 0.25 }}
+                      >
+                        <Iconify icon="solar:close-circle-bold" width={14} />
+                      </IconButton>
+                    </Box>
+                  ))}
+              </Box>
+            </Collapse>
+          </Box>
+        </>
+      )}
 
       <Divider sx={{ borderColor: 'grey.800' }} />
 
