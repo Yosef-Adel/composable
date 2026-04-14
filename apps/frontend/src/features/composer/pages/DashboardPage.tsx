@@ -508,14 +508,6 @@ function DashboardPageInner() {
               <Iconify icon="solar:maximize-bold" width={20} />
             </IconButton>
 
-            <IconButton onClick={() => handleAutoLayout('TB')} sx={{ color: 'grey.400' }} title="Auto-layout (top to bottom)">
-              <Iconify icon="solar:sort-vertical-bold" width={20} />
-            </IconButton>
-
-            <IconButton onClick={() => handleAutoLayout('LR')} sx={{ color: 'grey.400' }} title="Auto-layout (left to right)">
-              <Iconify icon="solar:sort-horizontal-bold" width={20} />
-            </IconButton>
-
             <Button
               variant="outlined"
               size="small"
