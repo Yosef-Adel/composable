@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Node, Edge, NodeChange, EdgeChange, Connection } from 'reactflow';
 import { applyNodeChanges, applyEdgeChanges, addEdge } from 'reactflow';
+import { HANDLE_IDS, EDGE_COLORS } from '../components/ServiceNode';
 import type {
   ComposerState,
   NodeConfig,
@@ -29,6 +30,35 @@ function generateNodeId(): string {
   return crypto.randomUUID();
 }
 
+// Derive connection type from handle IDs
+function getEdgeType(sourceHandle?: string | null, targetHandle?: string | null): string {
+  if (targetHandle === HANDLE_IDS.VOLUME || sourceHandle === HANDLE_IDS.LINK) {
+    if (targetHandle === HANDLE_IDS.VOLUME) return 'volume';
+    if (targetHandle === HANDLE_IDS.NETWORK) return 'network';
+    if (targetHandle === HANDLE_IDS.ENV) return 'env';
+  }
+  if (sourceHandle === HANDLE_IDS.DEPENDS_OUT || targetHandle === HANDLE_IDS.DEPENDS_IN) {
+    return 'depends';
+  }
+  return 'default';
+}
+
+// Build node data with config summaries for display on the node card
+function buildNodeData(config: NodeConfig) {
+  const base = { label: config.name, serviceType: config.type };
+  if (config.type === 'service') {
+    const sc = config as ServiceConfig;
+    return {
+      ...base,
+      image: sc.image,
+      portCount: sc.ports.filter((p) => p.host && p.container).length,
+      envCount: sc.environment.filter((e) => e.key).length,
+      volCount: sc.volumes.filter((v) => v.host && v.container).length,
+    };
+  }
+  return base;
+}
+
 const composerSlice = createSlice({
   name: 'composer',
   initialState,
@@ -38,15 +68,12 @@ const composerSlice = createSlice({
     applyNodeChangesAction: (state, action: PayloadAction<NodeChange[]>) => {
       const changes = action.payload;
 
-      // Collect IDs of removed nodes before applying
       const removedIds = changes
         .filter((c): c is NodeChange & { type: 'remove' } => c.type === 'remove')
         .map((c) => c.id);
 
-      // Apply positional / selection / dimension changes via ReactFlow utility
       state.nodes = applyNodeChanges(changes, state.nodes) as Node[];
 
-      // Clean up configs and edges for removed nodes
       if (removedIds.length > 0) {
         for (const id of removedIds) {
           delete state.nodeConfigs[id];
@@ -58,7 +85,6 @@ const composerSlice = createSlice({
           state.selectedNodeId = null;
         }
       }
-
     },
 
     applyEdgeChangesAction: (state, action: PayloadAction<EdgeChange[]>) => {
@@ -67,12 +93,33 @@ const composerSlice = createSlice({
 
     addConnection: (state, action: PayloadAction<Connection>) => {
       const conn = action.payload;
+      const edgeType = getEdgeType(conn.sourceHandle, conn.targetHandle);
+      const color = EDGE_COLORS[edgeType] ?? EDGE_COLORS.default;
+
+      // Validate: only allow valid connection types
+      const sourceConfig = state.nodeConfigs[conn.source!];
+      const targetConfig = state.nodeConfigs[conn.target!];
+      if (!sourceConfig || !targetConfig) return;
+
+      // Volume link → must connect to volume handle
+      if (sourceConfig.type === 'volume' && conn.targetHandle !== HANDLE_IDS.VOLUME) return;
+      if (sourceConfig.type === 'network' && conn.targetHandle !== HANDLE_IDS.NETWORK) return;
+      if (sourceConfig.type === 'environment' && conn.targetHandle !== HANDLE_IDS.ENV) return;
+
+      // Prevent duplicate connections
+      const exists = state.edges.some(
+        (e) => e.source === conn.source && e.target === conn.target
+          && e.sourceHandle === conn.sourceHandle && e.targetHandle === conn.targetHandle
+      );
+      if (exists) return;
+
       const newEdge: Edge = {
         ...conn,
-        id: `e-${conn.source}-${conn.target}`,
-        animated: true,
+        id: `e-${conn.source}-${conn.sourceHandle}-${conn.target}-${conn.targetHandle}`,
+        animated: edgeType === 'depends',
         type: 'smoothstep',
-        style: { stroke: '#3b82f6' },
+        style: { stroke: color, strokeWidth: 2 },
+        data: { edgeType },
       } as Edge;
       state.edges = addEdge(newEdge, state.edges) as Edge[];
     },
@@ -81,17 +128,10 @@ const composerSlice = createSlice({
 
     addNode: (
       state,
-      action: PayloadAction<{ blockType: BuildingBlockType; position: { x: number; y: number } }>
+      action: PayloadAction<{ blockType: BuildingBlockType; position: { x: number; y: number }; template?: Partial<ServiceConfig> }>
     ) => {
-      const { blockType, position } = action.payload;
+      const { blockType, position, template } = action.payload;
       const id = generateNodeId();
-
-      const newNode: Node = {
-        id,
-        type: blockType,
-        position,
-        data: { label: blockType, serviceType: blockType },
-      };
 
       let config: NodeConfig;
 
@@ -100,13 +140,14 @@ const composerSlice = createSlice({
           config = {
             id,
             type: 'service',
-            name: 'my-service',
-            image: 'nginx:alpine',
-            ports: [],
-            environment: [],
-            volumes: [],
+            name: template?.name ?? 'my-service',
+            image: template?.image ?? 'nginx:alpine',
+            ports: template?.ports ?? [],
+            environment: template?.environment ?? [],
+            volumes: template?.volumes ?? [],
             networks: [],
-            restart: 'unless-stopped',
+            command: template?.command,
+            restart: template?.restart ?? 'unless-stopped',
           } satisfies ServiceConfig;
           break;
         case 'volume':
@@ -137,6 +178,13 @@ const composerSlice = createSlice({
           return;
       }
 
+      const newNode: Node = {
+        id,
+        type: blockType,
+        position,
+        data: buildNodeData(config),
+      };
+
       state.nodes.push(newNode);
       state.nodeConfigs[id] = config;
     },
@@ -163,12 +211,10 @@ const composerSlice = createSlice({
 
       state.nodeConfigs[nodeId] = { ...existing, ...config } as NodeConfig;
 
-      // Keep the node label in sync with the config name
-      if (config.name) {
-        const node = state.nodes.find((n) => n.id === nodeId);
-        if (node) {
-          node.data = { ...node.data, label: config.name };
-        }
+      // Keep node data in sync with config
+      const node = state.nodes.find((n) => n.id === nodeId);
+      if (node) {
+        node.data = buildNodeData(state.nodeConfigs[nodeId]);
       }
     },
 
@@ -185,6 +231,14 @@ const composerSlice = createSlice({
       state.edges = action.payload.edges;
       state.nodeConfigs = action.payload.nodeConfigs;
       state.selectedNodeId = null;
+
+      // Rebuild node data from configs to ensure display is current
+      for (const node of state.nodes) {
+        const cfg = state.nodeConfigs[node.id];
+        if (cfg) {
+          node.data = buildNodeData(cfg);
+        }
+      }
     },
 
     clearComposer: (state) => {

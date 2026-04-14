@@ -40,7 +40,8 @@ import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { generateYaml } from '../utils/yamlGenerator';
-import type { BuildingBlockType } from '../types';
+import type { BuildingBlockType, ServiceConfig } from '../types';
+import { HANDLE_IDS } from '../components/ServiceNode';
 
 // Must be defined outside the component to keep a stable reference
 const nodeTypes = {
@@ -153,7 +154,7 @@ function DashboardPageInner() {
   // ── Actions ─────────────────────────────────────────────────────
 
   const handleAddService = useCallback(
-    (serviceType: BuildingBlockType) => {
+    (serviceType: BuildingBlockType, template?: Partial<ServiceConfig>) => {
       dispatch(
         addNodeAction({
           blockType: serviceType,
@@ -161,10 +162,33 @@ function DashboardPageInner() {
             x: Math.random() * 400 + 100,
             y: Math.random() * 300 + 100,
           },
+          template,
         })
       );
     },
     [dispatch]
+  );
+
+  // Validate connections at the drag level before they reach Redux
+  const isValidConnection = useCallback(
+    (connection: Connection) => {
+      const sourceConfig = nodeConfigs[connection.source!];
+      const targetConfig = nodeConfigs[connection.target!];
+      if (!sourceConfig || !targetConfig) return false;
+
+      // Volume link → must go to volume handle
+      if (sourceConfig.type === 'volume') return connection.targetHandle === HANDLE_IDS.VOLUME;
+      if (sourceConfig.type === 'network') return connection.targetHandle === HANDLE_IDS.NETWORK;
+      if (sourceConfig.type === 'environment') return connection.targetHandle === HANDLE_IDS.ENV;
+
+      // Service → Service depends_on
+      if (sourceConfig.type === 'service' && targetConfig.type === 'service') {
+        return connection.sourceHandle === HANDLE_IDS.DEPENDS_OUT && connection.targetHandle === HANDLE_IDS.DEPENDS_IN;
+      }
+
+      return false;
+    },
+    [nodeConfigs]
   );
 
   const handleDownloadYaml = useCallback(() => {
@@ -301,6 +325,7 @@ function DashboardPageInner() {
             onNodeClick={onNodeClick}
             onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
+            isValidConnection={isValidConnection}
             deleteKeyCode={['Backspace', 'Delete']}
             snapToGrid
             snapGrid={[16, 16]}

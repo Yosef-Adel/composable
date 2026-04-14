@@ -38,6 +38,30 @@ describe('composerSlice', () => {
       expect(state.nodeConfigs[nodeId].type).toBe('service');
     });
 
+    it('adds a service node from template', () => {
+      const store = createStore();
+      store.dispatch(
+        addNode({
+          blockType: 'service',
+          position: { x: 0, y: 0 },
+          template: {
+            name: 'postgres',
+            image: 'postgres:16-alpine',
+            ports: [{ host: '5432', container: '5432' }],
+            environment: [{ key: 'POSTGRES_DB', value: 'app' }],
+          },
+        }),
+      );
+
+      const state = store.getState().composer;
+      const nodeId = state.nodes[0].id;
+      const config = state.nodeConfigs[nodeId] as any;
+      expect(config.name).toBe('postgres');
+      expect(config.image).toBe('postgres:16-alpine');
+      expect(config.ports).toHaveLength(1);
+      expect(config.environment).toHaveLength(1);
+    });
+
     it('adds a volume node', () => {
       const store = createStore();
       store.dispatch(
@@ -71,7 +95,7 @@ describe('composerSlice', () => {
   });
 
   describe('addConnection', () => {
-    it('adds an edge between two nodes', () => {
+    it('connects a volume node to a service volume handle', () => {
       const store = createStore();
       store.dispatch(
         addNode({ blockType: 'service', position: { x: 0, y: 0 } }),
@@ -81,16 +105,78 @@ describe('composerSlice', () => {
       );
 
       const state = store.getState().composer;
-      const [n1, n2] = state.nodes;
+      const serviceId = state.nodes.find((n) => n.type === 'service')!.id;
+      const volumeId = state.nodes.find((n) => n.type === 'volume')!.id;
 
       store.dispatch(
-        addConnection({ source: n1.id, target: n2.id, sourceHandle: null, targetHandle: null }),
+        addConnection({ source: volumeId, target: serviceId, sourceHandle: 'link', targetHandle: 'volume' }),
       );
 
       const updatedState = store.getState().composer;
       expect(updatedState.edges).toHaveLength(1);
-      expect(updatedState.edges[0].source).toBe(n1.id);
-      expect(updatedState.edges[0].target).toBe(n2.id);
+      expect(updatedState.edges[0].data?.edgeType).toBe('volume');
+    });
+
+    it('rejects invalid connection (volume to network handle)', () => {
+      const store = createStore();
+      store.dispatch(
+        addNode({ blockType: 'service', position: { x: 0, y: 0 } }),
+      );
+      store.dispatch(
+        addNode({ blockType: 'volume', position: { x: 200, y: 0 } }),
+      );
+
+      const state = store.getState().composer;
+      const serviceId = state.nodes.find((n) => n.type === 'service')!.id;
+      const volumeId = state.nodes.find((n) => n.type === 'volume')!.id;
+
+      store.dispatch(
+        addConnection({ source: volumeId, target: serviceId, sourceHandle: 'link', targetHandle: 'network' }),
+      );
+
+      expect(store.getState().composer.edges).toHaveLength(0);
+    });
+
+    it('connects two services via depends_on', () => {
+      const store = createStore();
+      store.dispatch(
+        addNode({ blockType: 'service', position: { x: 0, y: 0 } }),
+      );
+      store.dispatch(
+        addNode({ blockType: 'service', position: { x: 200, y: 0 } }),
+      );
+
+      const state = store.getState().composer;
+      const [s1, s2] = state.nodes;
+
+      store.dispatch(
+        addConnection({ source: s1.id, target: s2.id, sourceHandle: 'depends-out', targetHandle: 'depends-in' }),
+      );
+
+      const updatedState = store.getState().composer;
+      expect(updatedState.edges).toHaveLength(1);
+      expect(updatedState.edges[0].data?.edgeType).toBe('depends');
+      expect(updatedState.edges[0].animated).toBe(true);
+    });
+
+    it('prevents duplicate connections', () => {
+      const store = createStore();
+      store.dispatch(
+        addNode({ blockType: 'service', position: { x: 0, y: 0 } }),
+      );
+      store.dispatch(
+        addNode({ blockType: 'network', position: { x: 200, y: 0 } }),
+      );
+
+      const state = store.getState().composer;
+      const serviceId = state.nodes.find((n) => n.type === 'service')!.id;
+      const networkId = state.nodes.find((n) => n.type === 'network')!.id;
+      const conn = { source: networkId, target: serviceId, sourceHandle: 'link', targetHandle: 'network' };
+
+      store.dispatch(addConnection(conn));
+      store.dispatch(addConnection(conn));
+
+      expect(store.getState().composer.edges).toHaveLength(1);
     });
   });
 
@@ -106,7 +192,7 @@ describe('composerSlice', () => {
   });
 
   describe('updateNodeConfig', () => {
-    it('updates config for an existing node', () => {
+    it('updates config and syncs node display data', () => {
       const store = createStore();
       store.dispatch(
         addNode({ blockType: 'service', position: { x: 0, y: 0 } }),
@@ -116,13 +202,18 @@ describe('composerSlice', () => {
       store.dispatch(
         updateNodeConfig({
           nodeId,
-          config: { image: 'nginx:latest' },
+          config: { image: 'nginx:latest', name: 'web' },
         }),
       );
 
       const config = store.getState().composer.nodeConfigs[nodeId];
       expect(config.type).toBe('service');
       expect((config as any).image).toBe('nginx:latest');
+
+      // Node data should be updated too
+      const node = store.getState().composer.nodes[0];
+      expect(node.data.label).toBe('web');
+      expect(node.data.image).toBe('nginx:latest');
     });
   });
 
@@ -178,21 +269,25 @@ describe('composerSlice', () => {
         addNode({ blockType: 'volume', position: { x: 200, y: 0 } }),
       );
 
-      const [n1, n2] = store.getState().composer.nodes;
-      store.dispatch(
-        addConnection({ source: n1.id, target: n2.id, sourceHandle: null, targetHandle: null }),
-      );
-
-      // Delete the first node
-      store.dispatch(
-        applyNodeChangesAction([{ type: 'remove', id: n1.id }]),
-      );
-
       const state = store.getState().composer;
-      expect(state.nodes).toHaveLength(1);
-      expect(state.nodes[0].id).toBe(n2.id);
-      expect(state.edges).toHaveLength(0);
-      expect(state.nodeConfigs[n1.id]).toBeUndefined();
+      const serviceId = state.nodes.find((n) => n.type === 'service')!.id;
+      const volumeId = state.nodes.find((n) => n.type === 'volume')!.id;
+
+      store.dispatch(
+        addConnection({ source: volumeId, target: serviceId, sourceHandle: 'link', targetHandle: 'volume' }),
+      );
+      expect(store.getState().composer.edges).toHaveLength(1);
+
+      // Delete the service node
+      store.dispatch(
+        applyNodeChangesAction([{ type: 'remove', id: serviceId }]),
+      );
+
+      const finalState = store.getState().composer;
+      expect(finalState.nodes).toHaveLength(1);
+      expect(finalState.nodes[0].id).toBe(volumeId);
+      expect(finalState.edges).toHaveLength(0);
+      expect(finalState.nodeConfigs[serviceId]).toBeUndefined();
     });
   });
 });

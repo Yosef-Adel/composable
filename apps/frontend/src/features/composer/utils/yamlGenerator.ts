@@ -15,16 +15,70 @@ export function generateYaml(nodeConfigs: Record<string, NodeConfig>, edges: Edg
 
   const configById = new Map(Object.entries(nodeConfigs));
 
-  // Build adjacency: source → target[] from edges (bidirectional)
-  const connections = new Map<string, string[]>();
-  for (const edge of edges) {
-    const list = connections.get(edge.source) ?? [];
-    list.push(edge.target);
-    connections.set(edge.source, list);
+  // Build typed adjacency from edges using handle IDs
+  // For each service node, collect what's connected to each handle type
+  const volumeConnections = new Map<string, string[]>(); // serviceId → volumeNodeIds
+  const networkConnections = new Map<string, string[]>();
+  const envConnections = new Map<string, string[]>();
+  const dependsOnConnections = new Map<string, string[]>(); // serviceId → target serviceIds
 
-    const rList = connections.get(edge.target) ?? [];
-    rList.push(edge.source);
-    connections.set(edge.target, rList);
+  for (const edge of edges) {
+    const edgeType = edge.data?.edgeType;
+
+    if (edgeType === 'volume' || edge.targetHandle === 'volume') {
+      const list = volumeConnections.get(edge.target) ?? [];
+      list.push(edge.source);
+      volumeConnections.set(edge.target, list);
+    } else if (edgeType === 'network' || edge.targetHandle === 'network') {
+      const list = networkConnections.get(edge.target) ?? [];
+      list.push(edge.source);
+      networkConnections.set(edge.target, list);
+    } else if (edgeType === 'env' || edge.targetHandle === 'env') {
+      const list = envConnections.get(edge.target) ?? [];
+      list.push(edge.source);
+      envConnections.set(edge.target, list);
+    } else if (edgeType === 'depends' || edge.sourceHandle === 'depends-out') {
+      const list = dependsOnConnections.get(edge.source) ?? [];
+      list.push(edge.target);
+      dependsOnConnections.set(edge.source, list);
+    } else {
+      // Legacy edges without handle types — use bidirectional detection
+      const sourceConfig = configById.get(edge.source);
+      const targetConfig = configById.get(edge.target);
+      if (sourceConfig && targetConfig) {
+        if (sourceConfig.type === 'volume' && targetConfig.type === 'service') {
+          const list = volumeConnections.get(edge.target) ?? [];
+          list.push(edge.source);
+          volumeConnections.set(edge.target, list);
+        } else if (sourceConfig.type === 'network' && targetConfig.type === 'service') {
+          const list = networkConnections.get(edge.target) ?? [];
+          list.push(edge.source);
+          networkConnections.set(edge.target, list);
+        } else if (sourceConfig.type === 'environment' && targetConfig.type === 'service') {
+          const list = envConnections.get(edge.target) ?? [];
+          list.push(edge.source);
+          envConnections.set(edge.target, list);
+        } else if (sourceConfig.type === 'service' && targetConfig.type === 'service') {
+          const list = dependsOnConnections.get(edge.source) ?? [];
+          list.push(edge.target);
+          dependsOnConnections.set(edge.source, list);
+        }
+        // Also handle reverse direction for legacy edges
+        if (targetConfig.type === 'volume' && sourceConfig.type === 'service') {
+          const list = volumeConnections.get(edge.source) ?? [];
+          list.push(edge.target);
+          volumeConnections.set(edge.source, list);
+        } else if (targetConfig.type === 'network' && sourceConfig.type === 'service') {
+          const list = networkConnections.get(edge.source) ?? [];
+          list.push(edge.target);
+          networkConnections.set(edge.source, list);
+        } else if (targetConfig.type === 'environment' && sourceConfig.type === 'service') {
+          const list = envConnections.get(edge.source) ?? [];
+          list.push(edge.target);
+          envConnections.set(edge.source, list);
+        }
+      }
+    }
   }
 
   // First pass: collect volumes and networks
@@ -38,7 +92,7 @@ export function generateYaml(nodeConfigs: Record<string, NodeConfig>, edges: Edg
     }
   }
 
-  // Second pass: build services with connected resources and depends_on
+  // Second pass: build services
   for (const config of Object.values(nodeConfigs)) {
     if (config.type !== 'service') continue;
     const sc = config as ServiceConfig;
@@ -61,32 +115,40 @@ export function generateYaml(nodeConfigs: Record<string, NodeConfig>, edges: Edg
     const networkEntries = [...sc.networks];
     const dependsOn: string[] = [];
 
-    const neighbors = connections.get(config.id) ?? [];
-    for (const neighborId of neighbors) {
-      const neighbor = configById.get(neighborId);
-      if (!neighbor) continue;
-
-      if (neighbor.type === 'volume') {
-        const vn = neighbor as VolumeConfig;
-        const mount = `${vn.name}:/data`;
+    // Connected volumes
+    for (const volId of volumeConnections.get(config.id) ?? []) {
+      const vol = configById.get(volId);
+      if (vol?.type === 'volume') {
+        const mount = `${(vol as VolumeConfig).name}:/data`;
         if (!volumeEntries.includes(mount)) volumeEntries.push(mount);
-      } else if (neighbor.type === 'network') {
-        const nn = neighbor as NetworkConfig;
-        if (!networkEntries.includes(nn.name)) networkEntries.push(nn.name);
-      } else if (neighbor.type === 'environment') {
-        const en = neighbor as EnvironmentConfig;
-        for (const v of en.variables) {
+      }
+    }
+
+    // Connected networks
+    for (const netId of networkConnections.get(config.id) ?? []) {
+      const net = configById.get(netId);
+      if (net?.type === 'network') {
+        const name = (net as NetworkConfig).name;
+        if (!networkEntries.includes(name)) networkEntries.push(name);
+      }
+    }
+
+    // Connected env groups
+    for (const envId of envConnections.get(config.id) ?? []) {
+      const envNode = configById.get(envId);
+      if (envNode?.type === 'environment') {
+        for (const v of (envNode as EnvironmentConfig).variables) {
           if (v.key) envMap[v.key] = v.value;
         }
-      } else if (neighbor.type === 'service') {
-        const sn = neighbor as ServiceConfig;
-        // Only add depends_on for outgoing edges (source → target)
-        const isOutgoing = edges.some(
-          (e) => e.source === config.id && e.target === neighborId,
-        );
-        if (isOutgoing && !dependsOn.includes(sn.name)) {
-          dependsOn.push(sn.name);
-        }
+      }
+    }
+
+    // depends_on
+    for (const depId of dependsOnConnections.get(config.id) ?? []) {
+      const dep = configById.get(depId);
+      if (dep?.type === 'service') {
+        const name = (dep as ServiceConfig).name;
+        if (!dependsOn.includes(name)) dependsOn.push(name);
       }
     }
 
