@@ -259,9 +259,17 @@ const composerSlice = createSlice({
     // ── Bulk operations ─────────────────────────────────────────────
 
     loadProjectData: (state, action: PayloadAction<PersistedComposerData>) => {
-      state.nodes = action.payload.nodes;
-      state.edges = action.payload.edges;
-      state.nodeConfigs = action.payload.nodeConfigs;
+      const { nodes: rawNodes, edges, nodeConfigs } = action.payload;
+
+      // Ensure every node has a valid position (guards against corrupted data)
+      state.nodes = (rawNodes ?? []).map((node, i) => ({
+        ...node,
+        position: node.position && typeof node.position.x === 'number'
+          ? node.position
+          : { x: 100 + (i % 4) * 250, y: 100 + Math.floor(i / 4) * 200 },
+      }));
+      state.edges = edges ?? [];
+      state.nodeConfigs = nodeConfigs ?? {};
       state.selectedNodeId = null;
 
       // Rebuild node data from configs to ensure display is current
