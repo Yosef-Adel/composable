@@ -81,6 +81,10 @@ function DashboardPageInner() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadedRef = useRef(false);
 
+  // Keep refs to latest state for use in unmount/beforeunload saves
+  const latestStateRef = useRef({ nodes, edges, nodeConfigs });
+  latestStateRef.current = { nodes, edges, nodeConfigs };
+
   const yamlContent = useMemo(() => generateYaml(nodeConfigs, edges), [nodeConfigs, edges]);
 
   // Load composer data from backend
@@ -117,20 +121,38 @@ function DashboardPageInner() {
       }
     })();
 
-    // Clear composer state when leaving the page
+    // Clear composer state when leaving the page, but save first
     return () => {
-      isLoadedRef.current = false;
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      // Flush save with latest data before clearing
+      if (isLoadedRef.current && projectId) {
+        const { nodes: n, edges: e, nodeConfigs: nc } = latestStateRef.current;
+        api
+          .put(`/projects/${projectId}/composer`, {
+            nodes: n,
+            edges: e,
+            nodeConfigs: nc,
+            nodeCount: n.length,
+          })
+          .catch(() => {});
+      }
+      isLoadedRef.current = false;
       dispatch(clearComposer());
     };
   }, [projectId, dispatch]);
 
   // Debounced auto-save (2 seconds after last change)
+  // Also flush save immediately on unmount to prevent data loss
+  const pendingSaveRef = useRef(false);
+
   useEffect(() => {
     if (!projectId || !isLoadedRef.current) return;
 
+    pendingSaveRef.current = true;
+
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
+      pendingSaveRef.current = false;
       api
         .put(`/projects/${projectId}/composer`, {
           nodes,
@@ -147,6 +169,32 @@ function DashboardPageInner() {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [projectId, nodes, edges, nodeConfigs]);
+
+  // Flush unsaved changes on page refresh/close
+  useEffect(() => {
+    const flushSave = () => {
+      if (!projectId || !isLoadedRef.current || !pendingSaveRef.current) return;
+      const { nodes: n, edges: e, nodeConfigs: nc } = latestStateRef.current;
+      const payload = JSON.stringify({
+        nodes: n,
+        edges: e,
+        nodeConfigs: nc,
+        nodeCount: n.length,
+      });
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+      const tokens = JSON.parse(localStorage.getItem('composable_tokens') ?? 'null');
+      if (tokens?.accessToken) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', `${baseUrl}/projects/${projectId}/composer`, false);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', `Bearer ${tokens.accessToken}`);
+        try { xhr.send(payload); } catch { /* best effort */ }
+      }
+    };
+
+    window.addEventListener('beforeunload', flushSave);
+    return () => window.removeEventListener('beforeunload', flushSave);
+  });
 
   // ── ReactFlow event handlers (all route through Redux) ──────────
 
