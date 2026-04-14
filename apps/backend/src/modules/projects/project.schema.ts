@@ -25,10 +25,10 @@ export class Project extends Document {
   @Prop({ default: false })
   isPublic: boolean;
 
-  @Prop({ default: null, index: true, sparse: true })
+  @Prop({ type: String, default: null, index: true, sparse: true })
   shareToken: string | null;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   sharedAt: Date | null;
 
   @Prop({ default: null })
