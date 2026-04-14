@@ -28,6 +28,7 @@ services:
       JWT_EXPIRATION: 15m
       JWT_REFRESH_EXPIRATION: 7d
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      CORE_ONLY: "true"
     depends_on:
       mongodb:
         condition: service_healthy
