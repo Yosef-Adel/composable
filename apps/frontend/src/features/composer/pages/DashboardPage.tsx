@@ -3,11 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ReactFlow, {
   Background,
   Controls,
+  MiniMap,
   BackgroundVariant,
   type Connection,
   type NodeChange,
   type EdgeChange,
   type NodeMouseHandler,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import {
@@ -47,10 +50,11 @@ const nodeTypes = {
   environment: ServiceNode,
 };
 
-export function DashboardPage() {
+function DashboardPageInner() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const reactFlowInstance = useReactFlow();
 
   const nodes = useAppSelector((state) => state.composer.nodes);
   const edges = useAppSelector((state) => state.composer.edges);
@@ -174,6 +178,32 @@ export function DashboardPage() {
     URL.revokeObjectURL(url);
   }, [yamlContent]);
 
+  const handleFitView = useCallback(() => {
+    reactFlowInstance.fitView({ padding: 0.2, duration: 300 });
+  }, [reactFlowInstance]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ctrl+S — save (auto-save handles this, but trigger immediate save)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (projectId) {
+          api
+            .put(`/projects/${projectId}/composer`, {
+              nodes,
+              edges,
+              nodeConfigs,
+              nodeCount: nodes.length,
+            })
+            .catch(() => {});
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [projectId, nodes, edges, nodeConfigs]);
+
   // ── Render ──────────────────────────────────────────────────────
 
   return (
@@ -216,6 +246,10 @@ export function DashboardPage() {
           <Box sx={{ display: 'flex', gap: 1 }}>
             <IconButton onClick={() => navigate('/projects')} sx={{ color: 'grey.400' }}>
               <Iconify icon="solar:home-2-bold" width={20} />
+            </IconButton>
+
+            <IconButton onClick={handleFitView} sx={{ color: 'grey.400' }} title="Fit to view">
+              <Iconify icon="solar:maximize-bold" width={20} />
             </IconButton>
 
             <Button
@@ -268,6 +302,8 @@ export function DashboardPage() {
             onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
             deleteKeyCode={['Backspace', 'Delete']}
+            snapToGrid
+            snapGrid={[16, 16]}
             style={{ background: '#0f172a' }}
           >
             <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#334155" />
@@ -276,6 +312,14 @@ export function DashboardPage() {
                 background: '#1e293b',
                 border: '1px solid #334155',
               }}
+            />
+            <MiniMap
+              style={{
+                background: '#1e293b',
+                border: '1px solid #334155',
+              }}
+              nodeColor="#3b82f6"
+              maskColor="rgba(15, 23, 42, 0.7)"
             />
           </ReactFlow>
 
@@ -360,5 +404,13 @@ export function DashboardPage() {
         </DialogActions>
       </Dialog>
     </Box>
+  );
+}
+
+export function DashboardPage() {
+  return (
+    <ReactFlowProvider>
+      <DashboardPageInner />
+    </ReactFlowProvider>
   );
 }

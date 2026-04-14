@@ -1,28 +1,33 @@
 import type { NodeConfig, ServiceConfig, VolumeConfig, NetworkConfig, EnvironmentConfig } from '../types';
 import type { Edge } from 'reactflow';
 
+function quoteYamlValue(value: string): string {
+  if (/[:{}\[\],&*?|>!%@`#'"\n]/.test(value) || value.trim() !== value || value === '') {
+    return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  }
+  return value;
+}
+
 export function generateYaml(nodeConfigs: Record<string, NodeConfig>, edges: Edge[]): string {
   const services: Record<string, Record<string, unknown>> = {};
   const volumes: Record<string, Record<string, unknown>> = {};
   const networks: Record<string, Record<string, unknown>> = {};
 
-  // Index configs by id for fast lookup
   const configById = new Map(Object.entries(nodeConfigs));
 
-  // Build adjacency: source → target[] from edges
+  // Build adjacency: source → target[] from edges (bidirectional)
   const connections = new Map<string, string[]>();
   for (const edge of edges) {
     const list = connections.get(edge.source) ?? [];
     list.push(edge.target);
     connections.set(edge.source, list);
 
-    // Also store reverse so a service connected *to* a volume/network picks it up
     const rList = connections.get(edge.target) ?? [];
     rList.push(edge.source);
     connections.set(edge.target, rList);
   }
 
-  // First pass: collect volumes and networks so services can reference them
+  // First pass: collect volumes and networks
   for (const config of Object.values(nodeConfigs)) {
     if (config.type === 'volume') {
       const vc = config as VolumeConfig;
@@ -33,27 +38,28 @@ export function generateYaml(nodeConfigs: Record<string, NodeConfig>, edges: Edg
     }
   }
 
-  // Second pass: build services, enriching them with connected volumes/networks/envs
+  // Second pass: build services with connected resources and depends_on
   for (const config of Object.values(nodeConfigs)) {
     if (config.type !== 'service') continue;
     const sc = config as ServiceConfig;
 
-    const svc: Record<string, unknown> = { image: sc.image };
+    const svc: Record<string, unknown> = {};
+    if (sc.image) svc.image = sc.image;
 
-    // Ports from config
     if (sc.ports.length > 0) {
-      svc.ports = sc.ports.map((p) => `${p.host}:${p.container}`);
+      svc.ports = sc.ports
+        .filter((p) => p.host && p.container)
+        .map((p) => quoteYamlValue(`${p.host}:${p.container}`));
     }
 
-    // Gather environment from config + connected EnvironmentConfig nodes
     const envMap: Record<string, string> = {};
     for (const env of sc.environment) {
       if (env.key) envMap[env.key] = env.value;
     }
 
-    // Gather volumes and networks from config + connected nodes
-    const volumeEntries = [...sc.volumes.map((v) => `${v.host}:${v.container}`)];
+    const volumeEntries = [...sc.volumes.filter((v) => v.host && v.container).map((v) => `${v.host}:${v.container}`)];
     const networkEntries = [...sc.networks];
+    const dependsOn: string[] = [];
 
     const neighbors = connections.get(config.id) ?? [];
     for (const neighborId of neighbors) {
@@ -72,19 +78,34 @@ export function generateYaml(nodeConfigs: Record<string, NodeConfig>, edges: Edg
         for (const v of en.variables) {
           if (v.key) envMap[v.key] = v.value;
         }
+      } else if (neighbor.type === 'service') {
+        const sn = neighbor as ServiceConfig;
+        // Only add depends_on for outgoing edges (source → target)
+        const isOutgoing = edges.some(
+          (e) => e.source === config.id && e.target === neighborId,
+        );
+        if (isOutgoing && !dependsOn.includes(sn.name)) {
+          dependsOn.push(sn.name);
+        }
       }
     }
 
-    if (Object.keys(envMap).length > 0) svc.environment = envMap;
+    if (Object.keys(envMap).length > 0) {
+      const quotedEnv: Record<string, string> = {};
+      for (const [k, v] of Object.entries(envMap)) {
+        quotedEnv[k] = quoteYamlValue(v);
+      }
+      svc.environment = quotedEnv;
+    }
     if (volumeEntries.length > 0) svc.volumes = volumeEntries;
     if (networkEntries.length > 0) svc.networks = networkEntries;
+    if (dependsOn.length > 0) svc.depends_on = dependsOn;
     if (sc.restart) svc.restart = sc.restart;
     if (sc.command) svc.command = sc.command;
 
     services[sc.name] = svc;
   }
 
-  // Build top-level YAML object
   const yamlObject: Record<string, unknown> = {};
 
   if (Object.keys(services).length > 0) yamlObject.services = services;
