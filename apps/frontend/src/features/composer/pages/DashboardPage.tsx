@@ -80,10 +80,62 @@ function DashboardPageInner() {
   const [validationPanelWidth, setValidationPanelWidth] = useState(360);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadedRef = useRef(false);
+  const projectIdRef = useRef(projectId);
+  projectIdRef.current = projectId;
 
   // Keep refs to latest state for use in unmount/beforeunload saves
   const latestStateRef = useRef({ nodes, edges, nodeConfigs });
   latestStateRef.current = { nodes, edges, nodeConfigs };
+
+  // Synchronous save function (for beforeunload)
+  const saveSync = useCallback(() => {
+    const pid = projectIdRef.current;
+    if (!pid || !isLoadedRef.current) return;
+    const { nodes: n, edges: e, nodeConfigs: nc } = latestStateRef.current;
+    // Serialize only what we need from nodes (strip ReactFlow internals)
+    const cleanNodes = n.map((node) => ({
+      id: node.id,
+      type: node.type,
+      position: node.position,
+      data: node.data,
+    }));
+    const payload = JSON.stringify({
+      nodes: cleanNodes,
+      edges: e,
+      nodeConfigs: nc,
+      nodeCount: n.length,
+    });
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+    const tokens = JSON.parse(localStorage.getItem('composable_tokens') ?? 'null');
+    if (tokens?.accessToken) {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', `${baseUrl}/projects/${pid}/composer`, false);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Authorization', `Bearer ${tokens.accessToken}`);
+      try { xhr.send(payload); } catch { /* best effort */ }
+    }
+  }, []);
+
+  // Async save function (for debounced autosave)
+  const saveAsync = useCallback(() => {
+    const pid = projectIdRef.current;
+    if (!pid || !isLoadedRef.current) return;
+    const { nodes: n, edges: e, nodeConfigs: nc } = latestStateRef.current;
+    const cleanNodes = n.map((node) => ({
+      id: node.id,
+      type: node.type,
+      position: node.position,
+      data: node.data,
+    }));
+    api
+      .put(`/projects/${pid}/composer`, {
+        nodes: cleanNodes,
+        edges: e,
+        nodeConfigs: nc,
+        nodeCount: n.length,
+      })
+      .catch(() => {});
+  }, []);
 
   const yamlContent = useMemo(() => generateYaml(nodeConfigs, edges), [nodeConfigs, edges]);
 
@@ -91,7 +143,6 @@ function DashboardPageInner() {
   useEffect(() => {
     if (!projectId) return;
 
-    // Reset loaded flag on each mount / projectId change
     isLoadedRef.current = false;
     setIsLoading(true);
 
@@ -110,10 +161,10 @@ function DashboardPageInner() {
           }),
         );
 
-        // Allow auto-save only after data is fully loaded into Redux
+        // Allow auto-save only after load settles
         setTimeout(() => {
           isLoadedRef.current = true;
-        }, 100);
+        }, 200);
       } catch {
         // Project not found or unauthorized
       } finally {
@@ -121,80 +172,32 @@ function DashboardPageInner() {
       }
     })();
 
-    // Clear composer state when leaving the page, but save first
     return () => {
+      // Save before unmount (navigation away)
+      saveSync();
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      // Flush save with latest data before clearing
-      if (isLoadedRef.current && projectId) {
-        const { nodes: n, edges: e, nodeConfigs: nc } = latestStateRef.current;
-        api
-          .put(`/projects/${projectId}/composer`, {
-            nodes: n,
-            edges: e,
-            nodeConfigs: nc,
-            nodeCount: n.length,
-          })
-          .catch(() => {});
-      }
       isLoadedRef.current = false;
       dispatch(clearComposer());
     };
-  }, [projectId, dispatch]);
+  }, [projectId, dispatch, saveSync]);
 
   // Debounced auto-save (2 seconds after last change)
-  // Also flush save immediately on unmount to prevent data loss
-  const pendingSaveRef = useRef(false);
-
   useEffect(() => {
     if (!projectId || !isLoadedRef.current) return;
 
-    pendingSaveRef.current = true;
-
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      pendingSaveRef.current = false;
-      api
-        .put(`/projects/${projectId}/composer`, {
-          nodes,
-          edges,
-          nodeConfigs,
-          nodeCount: nodes.length,
-        })
-        .catch(() => {
-          // Silent fail on autosave
-        });
-    }, 2000);
+    saveTimerRef.current = setTimeout(saveAsync, 2000);
 
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [projectId, nodes, edges, nodeConfigs]);
+  }, [projectId, nodes, edges, nodeConfigs, saveAsync]);
 
-  // Flush unsaved changes on page refresh/close
+  // Flush on page refresh/close
   useEffect(() => {
-    const flushSave = () => {
-      if (!projectId || !isLoadedRef.current || !pendingSaveRef.current) return;
-      const { nodes: n, edges: e, nodeConfigs: nc } = latestStateRef.current;
-      const payload = JSON.stringify({
-        nodes: n,
-        edges: e,
-        nodeConfigs: nc,
-        nodeCount: n.length,
-      });
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-      const tokens = JSON.parse(localStorage.getItem('composable_tokens') ?? 'null');
-      if (tokens?.accessToken) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', `${baseUrl}/projects/${projectId}/composer`, false);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Authorization', `Bearer ${tokens.accessToken}`);
-        try { xhr.send(payload); } catch { /* best effort */ }
-      }
-    };
-
-    window.addEventListener('beforeunload', flushSave);
-    return () => window.removeEventListener('beforeunload', flushSave);
-  });
+    window.addEventListener('beforeunload', saveSync);
+    return () => window.removeEventListener('beforeunload', saveSync);
+  }, [saveSync]);
 
   // ── ReactFlow event handlers (all route through Redux) ──────────
 
@@ -312,16 +315,7 @@ function DashboardPageInner() {
       switch (e.key) {
         case 's':
           e.preventDefault();
-          if (projectId) {
-            api
-              .put(`/projects/${projectId}/composer`, {
-                nodes,
-                edges,
-                nodeConfigs,
-                nodeCount: nodes.length,
-              })
-              .catch(() => {});
-          }
+          saveAsync();
           break;
         case 'z':
           e.preventDefault();
@@ -339,7 +333,7 @@ function DashboardPageInner() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [projectId, nodes, edges, nodeConfigs, dispatch]);
+  }, [dispatch, saveAsync]);
 
   // ── Render ──────────────────────────────────────────────────────
 
