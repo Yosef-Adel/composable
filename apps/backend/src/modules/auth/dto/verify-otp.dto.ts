@@ -1,4 +1,4 @@
-import { IsString, Length } from 'class-validator';
+import { IsString, IsMongoId, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VerifyOtpDto {
@@ -6,7 +6,7 @@ export class VerifyOtpDto {
     example: '507f1f77bcf86cd799439011',
     description: 'User ID received after registration',
   })
-  @IsString()
+  @IsMongoId()
   userId: string;
 
   @ApiProperty({

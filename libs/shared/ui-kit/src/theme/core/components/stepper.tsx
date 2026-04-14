@@ -7,8 +7,7 @@ const MuiStepper: Components<Theme>["MuiStepper"] = {
    * STYLE
    *************************************** */
   styleOverrides: {
-    root: ({ theme }) => ({
-      // Add any custom styles for stepper root
+    root: () => ({
     }),
   },
 };

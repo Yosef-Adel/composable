@@ -4,8 +4,7 @@ import { varAlpha } from '../../styles';
 export const table: Components<Theme> = {
   MuiTable: {
     styleOverrides: {
-      root: ({ theme }) => ({
-        borderCollapse: 'separate',
+      root: () => ({
         borderSpacing: 0,
       }),
     },
@@ -13,7 +12,7 @@ export const table: Components<Theme> = {
   MuiTableContainer: {
     styleOverrides: {
       root: ({ theme }) => ({
-        borderRadius: theme.shape.borderRadius * 1.5,
+        borderRadius: Number(theme.shape.borderRadius) * 1.5,
         border: theme.palette.mode === 'dark'
           ? `1px solid ${theme.palette.grey[800]}`
           : `1px solid ${theme.palette.grey[300]}`,
@@ -42,8 +41,7 @@ export const table: Components<Theme> = {
   },
   MuiTableRow: {
     styleOverrides: {
-      root: ({ theme }) => ({
-        transition: 'background-color 0.2s ease-in-out',
+      root: () => ({
         '&:last-child .MuiTableCell-root': {
           borderBottom: 'none',
         },

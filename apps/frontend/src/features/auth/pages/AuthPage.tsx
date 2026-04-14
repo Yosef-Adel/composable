@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Card, Typography } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
@@ -46,18 +46,18 @@ export function AuthPage() {
         })
       );
     }
-
-    // Navigate to projects after login/signup
-    setTimeout(() => {
-      navigate('/projects');
-    }, 600);
   };
+
+  // Navigate when auth succeeds
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/projects');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleDemoLogin = () => {
     dispatch(demoLogin());
-    setTimeout(() => {
-      navigate('/projects');
-    }, 300);
   };
 
   return (

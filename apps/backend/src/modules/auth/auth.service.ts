@@ -17,7 +17,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtPayload } from './types/jwt-payload.type';
-import { User } from '../users/user.schema';
+import { User, UserRole } from '../users/user.schema';
 
 export interface AuthResponse {
   accessToken: string;
@@ -38,13 +38,25 @@ export class AuthService {
   private readonly saltRounds = 12;
   private readonly otpResendCooldownMinutes = 1;
   private otpResendAttempts: Map<string, number> = new Map(); // email -> timestamp
+  private readonly otpResendCleanupInterval = 5 * 60 * 1000; // 5 minutes
 
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailService: MailService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    // Periodically clean up expired rate-limit entries to prevent memory leak
+    setInterval(() => {
+      const now = Date.now();
+      const cooldownMs = this.otpResendCooldownMinutes * 60 * 1000;
+      for (const [email, timestamp] of this.otpResendAttempts) {
+        if (now - timestamp > cooldownMs) {
+          this.otpResendAttempts.delete(email);
+        }
+      }
+    }, this.otpResendCleanupInterval);
+  }
 
   /**
    * Register a new user
@@ -312,7 +324,7 @@ export class AuthService {
   private async generateTokens(
     userId: string,
     email: string,
-    roles: string[],
+    roles: UserRole[],
   ): Promise<{
     accessToken: string;
     refreshToken: string;
@@ -321,8 +333,7 @@ export class AuthService {
     const jwtPayload: JwtPayload = {
       sub: userId,
       email,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      roles: roles as any,
+      roles,
     };
 
     /* eslint-disable @typescript-eslint/no-unsafe-assignment */

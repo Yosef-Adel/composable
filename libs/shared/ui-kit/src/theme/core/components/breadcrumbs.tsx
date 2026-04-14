@@ -7,8 +7,7 @@ const MuiBreadcrumbs: Components<Theme>["MuiBreadcrumbs"] = {
    * STYLE
    *************************************** */
   styleOverrides: {
-    root: ({ theme }) => ({
-      fontSize: '0.875rem',
+    root: () => ({
     }),
     separator: ({ theme }) => ({
       marginLeft: theme.spacing(1.5),

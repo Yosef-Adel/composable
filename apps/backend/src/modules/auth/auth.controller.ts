@@ -147,7 +147,7 @@ export class AuthController {
   async getCurrentUser(@Request() req: RequestWithUser) {
     const user = await this.authService.getCurrentUser(req.user.sub);
     return {
-      id: user._id,
+      id: user._id.toString(),
       name: user.name,
       email: user.email,
       roles: user.roles,

@@ -8,7 +8,7 @@ const MuiMenu: Components<Theme>["MuiMenu"] = {
    *************************************** */
   styleOverrides: {
     paper: ({ theme }) => ({
-      borderRadius: theme.shape.borderRadius * 1.5,
+      borderRadius: Number(theme.shape.borderRadius) * 1.5,
       boxShadow: theme.customShadows.dropdown,
       border: theme.palette.mode === 'dark'
         ? `1px solid ${theme.palette.grey[800]}`

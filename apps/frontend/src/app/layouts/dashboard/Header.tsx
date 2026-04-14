@@ -85,7 +85,7 @@ export function Header({ onOpenNav }: HeaderProps) {
                   fontSize: '0.875rem',
                 }}
               >
-                {user.name.charAt(0).toUpperCase()}
+                {(user.name?.[0] ?? 'U').toUpperCase()}
               </Avatar>
             </IconButton>
             <Menu

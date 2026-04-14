@@ -17,7 +17,7 @@ export const NavItem = forwardRef<HTMLDivElement, NavItemProps>(
     return (
       <ListItemButton
         ref={ref}
-        component={Link}
+        component={Link as any}
         to={item.path}
         sx={{
           pl: 2 + depth * 2,
@@ -37,3 +37,5 @@ export const NavItem = forwardRef<HTMLDivElement, NavItemProps>(
     );
   }
 );
+
+NavItem.displayName = 'NavItem';

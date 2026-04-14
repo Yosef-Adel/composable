@@ -1,5 +1,5 @@
-import { Tabs as MuiTabs, Tab as MuiTab, TabsProps as MuiTabsProps, TabProps as MuiTabProps, Box } from '@mui/material';
-import { ReactNode, SyntheticEvent, useState } from 'react';
+import { Tabs as MuiTabs, Tab as MuiTab, type TabsProps as MuiTabsProps, Box } from '@mui/material';
+import { type ReactNode, type SyntheticEvent, useState } from 'react';
 
 export interface TabsProps extends Omit<MuiTabsProps, 'children'> {
   /**
@@ -36,7 +36,7 @@ function TabPanel({ children, value, index }: TabPanelProps) {
 export function Tabs({ tabs, panels, defaultValue, ...props }: TabsProps) {
   const [value, setValue] = useState(defaultValue || tabs[0]?.value || '0');
 
-  const handleChange = (event: SyntheticEvent, newValue: string) => {
+  const handleChange = (_event: SyntheticEvent, newValue: string) => {
     setValue(newValue);
   };
 
@@ -48,7 +48,7 @@ export function Tabs({ tabs, panels, defaultValue, ...props }: TabsProps) {
             key={tab.value}
             label={tab.label}
             value={tab.value}
-            icon={tab.icon}
+            icon={tab.icon as React.ReactElement | undefined}
             iconPosition="start"
             disabled={tab.disabled}
           />

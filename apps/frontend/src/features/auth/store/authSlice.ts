@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { AuthState, User, LoginCredentials, SignupCredentials } from '../types';
+import type { AppDispatch } from '@/app/store';
 import { AUTH_STORAGE_KEY, DEMO_USER } from '../constants/storage';
 
 const loadUserFromStorage = (): User | null => {
@@ -71,7 +72,7 @@ export const {
   demoLogin,
 } = authSlice.actions;
 
-export const login = (credentials: LoginCredentials) => (dispatch: any) => {
+export const login = (credentials: LoginCredentials) => (dispatch: AppDispatch) => {
   dispatch(loginStart());
 
   // Simulate authentication (in real app, this would be an API call)
@@ -84,7 +85,7 @@ export const login = (credentials: LoginCredentials) => (dispatch: any) => {
   }, 500);
 };
 
-export const signup = (credentials: SignupCredentials) => (dispatch: any) => {
+export const signup = (credentials: SignupCredentials) => (dispatch: AppDispatch) => {
   dispatch(signupStart());
 
   // Simulate registration (in real app, this would be an API call)

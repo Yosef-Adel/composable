@@ -35,7 +35,7 @@ export class AdminController {
   async getAllUsers() {
     const users = await this.usersService.getAllUsers();
     return users.map((user) => ({
-      id: user._id,
+      id: user._id.toString(),
       name: user.name,
       email: user.email,
       roles: user.roles,

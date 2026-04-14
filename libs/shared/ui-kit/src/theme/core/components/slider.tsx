@@ -7,9 +7,7 @@ const MuiSlider: Components<Theme>["MuiSlider"] = {
    * STYLE
    *************************************** */
   styleOverrides: {
-    root: ({ theme }) => ({
-      height: 6,
-      padding: '15px 0',
+    root: () => ({
     }),
     rail: ({ theme }) => ({
       height: 6,

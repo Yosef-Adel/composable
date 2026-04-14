@@ -9,7 +9,7 @@ export const textfield: Components<Theme> = {
   MuiOutlinedInput: {
     styleOverrides: {
       root: ({ theme }) => ({
-        borderRadius: theme.shape.borderRadius * 1.5,
+        borderRadius: Number(theme.shape.borderRadius) * 1.5,
         backgroundColor: theme.palette.mode === 'dark'
           ? theme.palette.grey[900]
           : theme.palette.background.paper,

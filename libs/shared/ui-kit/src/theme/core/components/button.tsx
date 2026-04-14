@@ -7,7 +7,7 @@ export const button: Components<Theme> = {
     },
     styleOverrides: {
       root: ({ theme }) => ({
-        borderRadius: theme.shape.borderRadius * 1.5,
+        borderRadius: Number(theme.shape.borderRadius) * 1.5,
         textTransform: 'none',
         fontWeight: 600,
         fontSize: '1rem',

@@ -5,7 +5,7 @@ export const chip: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }) => ({
         fontWeight: 500,
-        borderRadius: theme.shape.borderRadius * 1.5,
+        borderRadius: Number(theme.shape.borderRadius) * 1.5,
         fontSize: '0.8125rem',
         height: '28px',
       }),

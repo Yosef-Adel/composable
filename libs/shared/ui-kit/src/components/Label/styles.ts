@@ -71,7 +71,7 @@ export const StyledLabel = styled(Box)(({
        */
       ...(variant === 'soft' && {
         color: theme.palette[color].dark,
-        backgroundColor: varAlpha(theme.palette[color].mainChannel, 0.16),
+        backgroundColor: varAlpha((theme.palette[color] as any).mainChannel, 0.16),
         [stylesMode.dark]: { color: theme.palette[color].light },
       }),
       /**
@@ -96,7 +96,7 @@ export const StyledLabel = styled(Box)(({
     padding: theme.spacing(0, 0.75),
     fontSize: theme.typography.pxToRem(12),
     fontWeight: theme.typography.fontWeightBold,
-    borderRadius: theme.shape.borderRadius * 0.75,
+    borderRadius: Number(theme.shape.borderRadius) * 0.75,
     transition: theme.transitions.create('all', {
       duration: theme.transitions.duration.shorter,
     }),

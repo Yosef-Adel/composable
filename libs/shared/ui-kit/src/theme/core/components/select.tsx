@@ -15,7 +15,7 @@ const MuiSelect: Components<Theme>["MuiSelect"] = {
    *************************************** */
   styleOverrides: {
     root: ({ theme }) => ({
-      borderRadius: theme.shape.borderRadius * 1.5,
+      borderRadius: Number(theme.shape.borderRadius) * 1.5,
     }),
   },
 };

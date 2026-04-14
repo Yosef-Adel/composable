@@ -64,8 +64,7 @@ const MuiListItemText: Components<Theme>["MuiListItemText"] = {
    * STYLE
    *************************************** */
   styleOverrides: {
-    primary: ({ theme }) => ({
-      fontWeight: 500,
+    primary: () => ({
     }),
     secondary: ({ theme }) => ({
       color: theme.palette.text.secondary,

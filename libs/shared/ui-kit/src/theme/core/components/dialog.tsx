@@ -4,7 +4,7 @@ export const dialog: Components<Theme> = {
   MuiDialog: {
     styleOverrides: {
       paper: ({ theme }) => ({
-        borderRadius: theme.shape.borderRadius * 2.5,
+        borderRadius: Number(theme.shape.borderRadius) * 2.5,
         boxShadow: theme.customShadows.dialog,
         backgroundColor: theme.palette.background.paper,
         border: theme.palette.mode === 'dark'

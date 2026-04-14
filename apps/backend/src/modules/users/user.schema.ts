@@ -48,10 +48,8 @@ export class User extends Document {
   @Prop({ default: null })
   refreshTokenHash?: string;
 
-  @Prop({ default: new Date() })
+  // Managed by Mongoose timestamps: true
   createdAt: Date;
-
-  @Prop({ default: new Date() })
   updatedAt: Date;
 }
 

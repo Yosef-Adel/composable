@@ -1,5 +1,4 @@
 import { Radio as MuiRadio, RadioProps as MuiRadioProps, RadioGroup, FormControlLabel, FormControl, FormLabel } from '@mui/material';
-import { ReactNode } from 'react';
 
 export interface RadioProps extends MuiRadioProps {
   /**

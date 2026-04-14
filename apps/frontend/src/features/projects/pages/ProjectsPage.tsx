@@ -148,7 +148,7 @@ export function ProjectsPage() {
 
             <Grid container spacing={3}>
               {projects.map((project) => (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={project.id}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={project.id}>
                   <ProjectCard
                     project={project}
                     onOpen={() => handleOpenProject(project.id)}

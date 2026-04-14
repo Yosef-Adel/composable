@@ -26,7 +26,7 @@ export const StyledArrow = styled('span', {
     backgroundColor: theme.palette.background.paper,
     border: `solid 1px ${varAlpha(theme.palette.grey['500Channel'], 0.12)}`,
     [stylesMode.dark]: {
-      border: `solid 1px ${varAlpha(theme.palette.common.blackChannel, 0.12)}`,
+      border: `solid 1px ${varAlpha((theme.palette.common as any).blackChannel, 0.12)}`,
     },
     /**
      * Top

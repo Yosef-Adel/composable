@@ -1,4 +1,4 @@
-export function EmptyIllustration() {
+export function EmptyIllustration({ sx }: { sx?: Record<string, any> }) {
   return (
     <svg
       width="120"
@@ -6,6 +6,7 @@ export function EmptyIllustration() {
       viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      style={sx}
     >
       <g opacity="0.48">
         <path

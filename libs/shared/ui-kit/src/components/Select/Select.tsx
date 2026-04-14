@@ -1,5 +1,4 @@
 import { Select as MuiSelect, SelectProps as MuiSelectProps, MenuItem, FormControl, InputLabel } from '@mui/material';
-import { ReactNode } from 'react';
 
 export interface SelectOption {
   value: string | number;

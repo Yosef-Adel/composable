@@ -13,7 +13,7 @@ const MuiAccordion: Components<Theme>["MuiAccordion"] = {
   styleOverrides: {
     root: ({ theme }) => ({
       backgroundColor: "transparent",
-      borderRadius: theme.shape.borderRadius * 1.5,
+      borderRadius: Number(theme.shape.borderRadius) * 1.5,
       border: theme.palette.mode === 'dark'
         ? `1px solid ${theme.palette.grey[800]}`
         : `1px solid ${theme.palette.grey[300]}`,

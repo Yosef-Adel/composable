@@ -69,7 +69,7 @@ const composerSlice = createSlice({
 
       const newNode: Node = {
         id,
-        type: 'service',
+        type: blockType,
         position,
         data: {
           label: blockType,

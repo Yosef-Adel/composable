@@ -77,11 +77,11 @@ export function useChart(options?: ChartOptions): ChartOptions {
       ...options?.states,
       hover: {
         ...options?.states?.hover,
-        filter: { type: 'darken', value: 0.88, ...options?.states?.hover?.filter },
+        filter: { type: 'darken', value: 0.88, ...options?.states?.hover?.filter } as any,
       },
       active: {
         ...options?.states?.active,
-        filter: { type: 'darken', value: 0.88, ...options?.states?.active?.filter },
+        filter: { type: 'darken', value: 0.88, ...options?.states?.active?.filter } as any,
       },
     },
     fill: {
@@ -153,7 +153,7 @@ export function useChart(options?: ChartOptions): ChartOptions {
       fontWeight: 500,
       fontSize: '13px',
       horizontalAlign: 'right',
-      markers: { radius: 12 },
+      markers: { radius: 12 } as any,
       labels: {
         colors: theme.palette.text.primary,
       },

@@ -14,7 +14,7 @@ import 'reactflow/dist/style.css';
 import { Box, AppBar, Toolbar, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { setNodes, setEdges, addNode as addNodeToStore, deleteNode, setSelectedNode } from '../store/composerSlice';
+import { addNode as addNodeToStore, deleteNode, setSelectedNode } from '../store/composerSlice';
 import { updateProject } from '@/features/projects/store/projectsSlice';
 import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
@@ -23,6 +23,9 @@ import type { BuildingBlockType } from '../types';
 
 const nodeTypes = {
   service: ServiceNode,
+  volume: ServiceNode,
+  network: ServiceNode,
+  environment: ServiceNode,
 };
 
 export function DashboardPage() {

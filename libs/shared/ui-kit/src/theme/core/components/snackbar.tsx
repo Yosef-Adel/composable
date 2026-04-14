@@ -9,11 +9,7 @@ const MuiSnackbar: Components<Theme>["MuiSnackbar"] = {
   styleOverrides: {
     root: ({ theme }) => ({
       '& .MuiSnackbarContent-root': {
-        borderRadius: theme.shape.borderRadius * 1.5,
-        backgroundColor: theme.palette.mode === 'dark'
-          ? theme.palette.grey[800]
-          : theme.palette.grey[900],
-        color: theme.palette.common.white,
+        borderRadius: Number(theme.shape.borderRadius) * 1.5,
         fontSize: '0.9375rem',
         fontWeight: 500,
         padding: theme.spacing(1.5, 2),
@@ -31,7 +27,7 @@ const MuiSnackbarContent: Components<Theme>["MuiSnackbarContent"] = {
    *************************************** */
   styleOverrides: {
     root: ({ theme }) => ({
-      borderRadius: theme.shape.borderRadius * 1.5,
+      borderRadius: Number(theme.shape.borderRadius) * 1.5,
       backgroundColor: theme.palette.mode === 'dark'
         ? theme.palette.grey[800]
         : theme.palette.grey[900],

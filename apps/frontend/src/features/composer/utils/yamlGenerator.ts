@@ -1,7 +1,7 @@
 import type { NodeConfig, ServiceConfig, VolumeConfig, NetworkConfig } from '../types';
 import type { Edge } from 'reactflow';
 
-export function generateYaml(nodeConfigs: Record<string, NodeConfig>, edges: Edge[]): string {
+export function generateYaml(nodeConfigs: Record<string, NodeConfig>, _edges: Edge[]): string {
   const services: Record<string, any> = {};
   const volumes: Record<string, any> = {};
   const networks: Record<string, any> = {};
