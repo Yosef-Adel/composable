@@ -85,8 +85,8 @@ export function NewProjectDialog({ open, onClose, onCreate }: NewProjectDialogPr
         </Box>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 3 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <DialogContent sx={{ pt: '24px !important' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
           <TextField
             autoFocus
             label="Project Name"

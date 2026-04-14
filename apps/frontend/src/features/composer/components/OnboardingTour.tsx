@@ -28,7 +28,7 @@ const STEPS: TourStep[] = [
     title: 'Canvas',
     description: 'Drag between colored handles to connect services.',
     anchorId: 'onboarding-canvas',
-    placement: 'bottom',
+    placement: 'top',
   },
   {
     title: 'Toolbar',
