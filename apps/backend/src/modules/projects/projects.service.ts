@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { randomBytes } from 'crypto';
 import { Project } from './project.schema';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto, SaveComposerDataDto } from './dto/update-project.dto';
@@ -148,5 +149,47 @@ export class ProjectsService {
     if (!result) {
       throw new NotFoundException('Project not found');
     }
+  }
+
+  async shareProject(projectId: string, ownerId: string): Promise<{ shareToken: string }> {
+    const project = await this.findById(projectId, ownerId);
+
+    if ((project as any).shareToken) {
+      return { shareToken: (project as any).shareToken };
+    }
+
+    const shareToken = randomBytes(16).toString('hex');
+    await this.projectModel.findByIdAndUpdate(projectId, {
+      $set: { isPublic: true, shareToken, sharedAt: new Date() },
+    });
+
+    return { shareToken };
+  }
+
+  async unshareProject(projectId: string, ownerId: string): Promise<void> {
+    const result = await this.projectModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(projectId),
+        ownerId: new Types.ObjectId(ownerId),
+        deletedAt: null,
+      },
+      { $set: { isPublic: false, shareToken: null, sharedAt: null } },
+    );
+
+    if (!result) {
+      throw new NotFoundException('Project not found');
+    }
+  }
+
+  async findByShareToken(token: string): Promise<Project> {
+    const project = await this.projectModel
+      .findOne({ shareToken: token, isPublic: true, deletedAt: null })
+      .lean()
+      .exec();
+
+    if (!project) {
+      throw new NotFoundException('Shared project not found');
+    }
+    return project as Project;
   }
 }

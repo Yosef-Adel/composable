@@ -22,6 +22,15 @@ export class Project extends Document {
   @Prop({ default: 0 })
   nodeCount: number;
 
+  @Prop({ default: false })
+  isPublic: boolean;
+
+  @Prop({ default: null, index: true, sparse: true })
+  shareToken: string | null;
+
+  @Prop({ default: null })
+  sharedAt: Date | null;
+
   @Prop({ default: null })
   deletedAt?: Date;
 

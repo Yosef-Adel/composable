@@ -21,6 +21,11 @@ const DashboardPage = lazy(() =>
     default: m.DashboardPage,
   })),
 );
+const SharedViewPage = lazy(() =>
+  import('../features/composer/pages/SharedViewPage').then((m) => ({
+    default: m.SharedViewPage,
+  })),
+);
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -64,6 +69,14 @@ export const router = createBrowserRouter([
         <ProtectedRoute>
           <DashboardPage />
         </ProtectedRoute>
+      </SuspenseWrapper>
+    ),
+  },
+  {
+    path: '/shared/:token',
+    element: (
+      <SuspenseWrapper>
+        <SharedViewPage />
       </SuspenseWrapper>
     ),
   },

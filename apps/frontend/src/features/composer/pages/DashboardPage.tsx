@@ -40,6 +40,7 @@ import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { YamlPanel } from '../components/YamlPanel';
 import { ValidationPanel } from '../components/ValidationPanel';
+import { ShareDialog } from '../components/ShareDialog';
 import { generateYaml } from '../utils/yamlGenerator';
 import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
 import type { BuildingBlockType, ServiceConfig } from '../types';
@@ -65,6 +66,7 @@ function DashboardPageInner() {
 
   const [showYamlPanel, setShowYamlPanel] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const [projectName, setProjectName] = useState('Composable');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadedRef = useRef(false);
@@ -345,6 +347,16 @@ function DashboardPageInner() {
             >
               Deploy
             </Button>
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Iconify icon="solar:share-bold" width={16} />}
+              onClick={() => setShowShareDialog(true)}
+              sx={{ borderColor: 'grey.700', color: 'grey.300' }}
+            >
+              Share
+            </Button>
           </Box>
         </Toolbar>
       </AppBar>
@@ -424,6 +436,15 @@ function DashboardPageInner() {
         {/* Validation Panel */}
         <ValidationPanel open={showValidation} onClose={() => setShowValidation(false)} />
       </Box>
+
+      {/* Share Dialog */}
+      {projectId && (
+        <ShareDialog
+          open={showShareDialog}
+          onClose={() => setShowShareDialog(false)}
+          projectId={projectId}
+        />
+      )}
     </Box>
   );
 }

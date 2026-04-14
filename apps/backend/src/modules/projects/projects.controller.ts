@@ -101,4 +101,18 @@ export class ProjectsController {
   ) {
     return this.projectsService.saveComposerData(id, req.user.sub, dto);
   }
+
+  @Post(':id/share')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Generate a share link for a project' })
+  async share(@Request() req: any, @Param('id') id: string) {
+    return this.projectsService.shareProject(id, req.user.sub);
+  }
+
+  @Delete(':id/share')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Revoke share link for a project' })
+  async unshare(@Request() req: any, @Param('id') id: string) {
+    await this.projectsService.unshareProject(id, req.user.sub);
+  }
 }
