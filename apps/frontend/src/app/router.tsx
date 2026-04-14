@@ -5,27 +5,13 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { PageLoader } from './components/PageLoader';
 import { NotFoundPage } from './pages/NotFoundPage';
 
-const HomePage = lazy(() =>
-  import('../features/home/pages/HomePage').then((m) => ({ default: m.HomePage })),
-);
-const AuthPage = lazy(() =>
-  import('../features/auth/pages/AuthPage').then((m) => ({ default: m.AuthPage })),
-);
-const ProjectsPage = lazy(() =>
-  import('../features/projects/pages/ProjectsPage').then((m) => ({
-    default: m.ProjectsPage,
-  })),
-);
-const DashboardPage = lazy(() =>
-  import('../features/composer/pages/DashboardPage').then((m) => ({
-    default: m.DashboardPage,
-  })),
-);
-const SharedViewPage = lazy(() =>
-  import('../features/composer/pages/SharedViewPage').then((m) => ({
-    default: m.SharedViewPage,
-  })),
-);
+const HomePage = lazy(() => import('../features/home/pages/HomePage').then((m) => ({ default: m.HomePage })));
+const AuthPage = lazy(() => import('../features/auth/pages/AuthPage').then((m) => ({ default: m.AuthPage })));
+const ProjectsPage = lazy(() => import('../features/projects/pages/ProjectsPage').then((m) => ({ default: m.ProjectsPage })));
+const SharedViewPage = lazy(() => import('../features/composer/pages/SharedViewPage').then((m) => ({ default: m.SharedViewPage })));
+
+// DashboardPage uses default export to avoid HMR/lazy resolution issues
+const DashboardPage = lazy(() => import('../features/composer/pages/DashboardPage'));
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
   const location = useLocation();

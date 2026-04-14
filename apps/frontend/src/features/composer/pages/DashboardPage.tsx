@@ -563,3 +563,5 @@ export function DashboardPage() {
     </ReactFlowProvider>
   );
 }
+
+export default DashboardPage;
