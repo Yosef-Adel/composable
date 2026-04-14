@@ -11,6 +11,8 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -94,6 +96,7 @@ export class ProjectsController {
 
   @Put(':id/composer')
   @ApiOperation({ summary: 'Save composer data for a project' })
+  @UsePipes(new ValidationPipe({ whitelist: false, transform: false }))
   async saveComposerData(
     @Request() req: any,
     @Param('id') id: string,
