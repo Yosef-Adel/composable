@@ -20,6 +20,7 @@ import {
   Typography,
   Button,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
@@ -72,6 +73,7 @@ function DashboardPageInner() {
   const [showValidation, setShowValidation] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [projectName, setProjectName] = useState('Composable');
+  const [isLoading, setIsLoading] = useState(true);
   const [leftPanelWidth, setLeftPanelWidth] = useState(280);
   const [rightPanelWidth, setRightPanelWidth] = useState(320);
   const [yamlPanelWidth, setYamlPanelWidth] = useState(420);
@@ -87,6 +89,7 @@ function DashboardPageInner() {
 
     // Reset loaded flag on each mount / projectId change
     isLoadedRef.current = false;
+    setIsLoading(true);
 
     (async () => {
       try {
@@ -95,11 +98,6 @@ function DashboardPageInner() {
         setProjectName(project.name ?? 'Composable');
 
         const composerData = project.composerData;
-        console.debug('[Composer] Loading project data:', {
-          nodesCount: composerData?.nodes?.length ?? 0,
-          edgesCount: composerData?.edges?.length ?? 0,
-          nodeConfigsCount: Object.keys(composerData?.nodeConfigs ?? {}).length,
-        });
         dispatch(
           loadProjectData({
             nodes: composerData?.nodes ?? [],
@@ -109,12 +107,13 @@ function DashboardPageInner() {
         );
 
         // Allow auto-save only after data is fully loaded into Redux
-        // Use a short delay to skip the auto-save effect triggered by loadProjectData
         setTimeout(() => {
           isLoadedRef.current = true;
         }, 100);
       } catch {
         // Project not found or unauthorized
+      } finally {
+        setIsLoading(false);
       }
     })();
 
@@ -479,8 +478,30 @@ function DashboardPageInner() {
             />
           </ReactFlow>
 
+          {/* Loading Overlay */}
+          {isLoading && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: 'rgba(15, 23, 42, 0.9)',
+                zIndex: 10,
+              }}
+            >
+              <Box sx={{ textAlign: 'center' }}>
+                <CircularProgress size={48} sx={{ mb: 2, color: 'primary.main' }} />
+                <Typography variant="h6" sx={{ color: 'grey.300' }}>
+                  Loading project...
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
           {/* Empty State */}
-          {nodes.length === 0 && (
+          {!isLoading && nodes.length === 0 && (
             <Box
               sx={{
                 position: 'absolute',
