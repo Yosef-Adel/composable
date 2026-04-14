@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Node, Edge, NodeChange, EdgeChange, Connection } from 'reactflow';
 import { applyNodeChanges, applyEdgeChanges, addEdge } from 'reactflow';
 import { HANDLE_IDS, EDGE_COLORS } from '../components/ServiceNode';
+import type { StackTemplate } from '../data/stackTemplates';
 import type {
   ComposerState,
   NodeConfig,
@@ -326,6 +327,145 @@ const composerSlice = createSlice({
       state.edges = snapshot.edges;
       state.nodeConfigs = snapshot.nodeConfigs;
     },
+
+    addStack: (
+      state,
+      action: PayloadAction<{ stack: StackTemplate; origin: { x: number; y: number } }>
+    ) => {
+      const { stack, origin } = action.payload;
+      pushHistory(state);
+
+      const nameToId: Record<string, string> = {};
+      const SPACING_X = 300;
+      const SPACING_Y = 200;
+      const cols = Math.ceil(Math.sqrt(stack.services.length + (stack.volumes?.length ?? 0) + (stack.networks?.length ?? 0)));
+
+      let idx = 0;
+
+      // Add services
+      for (const svc of stack.services) {
+        const id = generateNodeId();
+        nameToId[svc.name] = id;
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+
+        const config: ServiceConfig = {
+          id,
+          type: 'service',
+          name: svc.name,
+          image: svc.image,
+          ports: svc.ports ?? [],
+          environment: svc.environment ?? [],
+          volumes: svc.volumes ?? [],
+          networks: [],
+          command: svc.command,
+          restart: svc.restart ?? 'unless-stopped',
+        };
+
+        state.nodes.push({
+          id,
+          type: 'service',
+          position: { x: origin.x + col * SPACING_X, y: origin.y + row * SPACING_Y },
+          data: buildNodeData(config),
+        });
+        state.nodeConfigs[id] = config;
+        idx++;
+      }
+
+      // Add volumes
+      for (const vol of stack.volumes ?? []) {
+        const id = generateNodeId();
+        nameToId[vol.name] = id;
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+
+        const config: VolumeConfig = {
+          id,
+          type: 'volume',
+          name: vol.name,
+          driver: vol.driver ?? 'local',
+        };
+
+        state.nodes.push({
+          id,
+          type: 'volume',
+          position: { x: origin.x + col * SPACING_X, y: origin.y + row * SPACING_Y },
+          data: buildNodeData(config),
+        });
+        state.nodeConfigs[id] = config;
+        idx++;
+      }
+
+      // Add networks
+      for (const net of stack.networks ?? []) {
+        const id = generateNodeId();
+        nameToId[net.name] = id;
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+
+        const config: NetworkConfig = {
+          id,
+          type: 'network',
+          name: net.name,
+          driver: net.driver ?? 'bridge',
+        };
+
+        state.nodes.push({
+          id,
+          type: 'network',
+          position: { x: origin.x + col * SPACING_X, y: origin.y + row * SPACING_Y },
+          data: buildNodeData(config),
+        });
+        state.nodeConfigs[id] = config;
+        idx++;
+      }
+
+      // Add edges from connections
+      for (const [sourceName, targetName, connType] of stack.connections ?? []) {
+        const sourceId = nameToId[sourceName];
+        const targetId = nameToId[targetName];
+        if (!sourceId || !targetId) continue;
+
+        let sourceHandle: string;
+        let targetHandle: string;
+        let edgeColor: string;
+
+        switch (connType) {
+          case 'depends':
+            sourceHandle = HANDLE_IDS.DEPENDS_ON;
+            targetHandle = HANDLE_IDS.DEPENDS_ON;
+            edgeColor = EDGE_COLORS.depends_on;
+            break;
+          case 'volume':
+            sourceHandle = HANDLE_IDS.VOLUME;
+            targetHandle = HANDLE_IDS.VOLUME;
+            edgeColor = EDGE_COLORS.volume;
+            break;
+          case 'network':
+            sourceHandle = HANDLE_IDS.NETWORK;
+            targetHandle = HANDLE_IDS.NETWORK;
+            edgeColor = EDGE_COLORS.network;
+            break;
+          default:
+            sourceHandle = HANDLE_IDS.LINK;
+            targetHandle = HANDLE_IDS.LINK;
+            edgeColor = '#888';
+        }
+
+        const edgeId = `e-${sourceId}-${sourceHandle}-${targetId}-${targetHandle}`;
+        state.edges.push({
+          id: edgeId,
+          source: sourceId,
+          sourceHandle,
+          target: targetId,
+          targetHandle,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: edgeColor, strokeWidth: 2 },
+          data: { edgeType: connType },
+        });
+      }
+    },
   },
 });
 
@@ -334,6 +474,7 @@ export const {
   applyEdgeChangesAction,
   addConnection,
   addNode,
+  addStack,
   deleteNode,
   updateNodeConfig,
   setSelectedNode,

@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { showNotification } from '@/app/store/notificationSlice';
 import { api } from '@/services/api';
 import {
   addNode as addNodeAction,
@@ -47,6 +48,7 @@ import { ResizeHandle } from '../components/ResizeHandle';
 import { generateYaml } from '../utils/yamlGenerator';
 import { generateDocs } from '../utils/docsGenerator';
 import { parseDockerCompose } from '../utils/yamlImporter';
+import { validateCompose } from '../utils/composeValidator';
 import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
 import type { BuildingBlockType, ServiceConfig } from '../types';
 import { HANDLE_IDS } from '../components/ServiceNode';
@@ -159,6 +161,8 @@ function DashboardPageInner() {
             nodeConfigs: composerData?.nodeConfigs ?? {},
           }),
         );
+
+        dispatch(showNotification({ message: 'Project loaded', severity: 'success' }));
 
         // Allow auto-save only after load settles
         setTimeout(() => {
@@ -315,6 +319,7 @@ function DashboardPageInner() {
         case 's':
           e.preventDefault();
           saveAsync();
+          dispatch(showNotification({ message: 'Project saved', severity: 'success' }));
           break;
         case 'z':
           e.preventDefault();
@@ -430,7 +435,22 @@ function DashboardPageInner() {
               variant="outlined"
               size="small"
               startIcon={<Iconify icon="solar:copy-bold" width={16} />}
-              onClick={() => yamlContent && navigator.clipboard.writeText(yamlContent)}
+              onClick={() => {
+                if (!yamlContent) return;
+                const issues = validateCompose(nodeConfigs, edges);
+                const errors = issues.filter((i) => i.severity === 'error');
+                if (errors.length > 0) {
+                  dispatch(showNotification({ message: `Compose has ${errors.length} error(s). Fix them before exporting.`, severity: 'warning' }));
+                  return;
+                }
+                const warnings = issues.filter((i) => i.severity === 'warning' || i.severity === 'info');
+                navigator.clipboard.writeText(yamlContent);
+                if (warnings.length > 0) {
+                  dispatch(showNotification({ message: `Copied to clipboard with ${warnings.length} warning(s)`, severity: 'info' }));
+                } else {
+                  dispatch(showNotification({ message: 'Copied to clipboard', severity: 'success' }));
+                }
+              }}
               disabled={!yamlContent}
               sx={{ borderColor: 'grey.700', color: 'grey.300' }}
             >
@@ -440,8 +460,45 @@ function DashboardPageInner() {
             <Button
               variant="outlined"
               size="small"
+              startIcon={<Iconify icon="solar:download-bold" width={16} />}
+              onClick={() => {
+                if (!yamlContent) return;
+                const issues = validateCompose(nodeConfigs, edges);
+                const errors = issues.filter((i) => i.severity === 'error');
+                if (errors.length > 0) {
+                  dispatch(showNotification({ message: `Compose has ${errors.length} error(s). Fix them before exporting.`, severity: 'warning' }));
+                  return;
+                }
+                const warnings = issues.filter((i) => i.severity === 'warning' || i.severity === 'info');
+                const blob = new Blob([yamlContent], { type: 'text/yaml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'docker-compose.yml';
+                a.click();
+                URL.revokeObjectURL(url);
+                if (warnings.length > 0) {
+                  dispatch(showNotification({ message: `Exported with ${warnings.length} warning(s)`, severity: 'info' }));
+                }
+              }}
+              disabled={!yamlContent}
+              sx={{ borderColor: 'grey.700', color: 'grey.300' }}
+            >
+              Download
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="small"
               startIcon={<Iconify icon="solar:document-text-bold" width={16} />}
               onClick={() => {
+                const issues = validateCompose(nodeConfigs, edges);
+                const errors = issues.filter((i) => i.severity === 'error');
+                if (errors.length > 0) {
+                  dispatch(showNotification({ message: `Compose has ${errors.length} error(s). Fix them before exporting.`, severity: 'warning' }));
+                  return;
+                }
+                const warnings = issues.filter((i) => i.severity === 'warning' || i.severity === 'info');
                 const docs = generateDocs(nodeConfigs, edges, projectName);
                 const blob = new Blob([docs], { type: 'text/markdown' });
                 const url = URL.createObjectURL(blob);
@@ -450,6 +507,9 @@ function DashboardPageInner() {
                 a.download = 'README.md';
                 a.click();
                 URL.revokeObjectURL(url);
+                if (warnings.length > 0) {
+                  dispatch(showNotification({ message: `Exported with ${warnings.length} warning(s)`, severity: 'info' }));
+                }
               }}
               disabled={Object.keys(nodeConfigs).length === 0}
               sx={{ borderColor: 'grey.700', color: 'grey.300' }}

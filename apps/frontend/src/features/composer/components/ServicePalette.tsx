@@ -3,9 +3,11 @@ import { Box, Typography, Paper, TextField, InputAdornment, Divider, Chip, Colla
 import { Iconify } from '@composable/ui-kit';
 import type { BuildingBlockType, ServiceConfig } from '../types';
 import { SERVICE_TEMPLATES, TEMPLATE_CATEGORIES, type ServiceTemplate } from '../data/serviceTemplates';
+import { STACK_TEMPLATES, type StackTemplate } from '../data/stackTemplates';
 
 interface ServicePaletteProps {
   onAddService: (serviceType: BuildingBlockType, template?: Partial<ServiceConfig>) => void;
+  onAddStack?: (stack: StackTemplate) => void;
   width?: number;
 }
 
@@ -80,7 +82,55 @@ function TemplateCard({ template, onClick }: { template: ServiceTemplate; onClic
   );
 }
 
-export function ServicePalette({ onAddService, width = 280 }: ServicePaletteProps) {
+function StackCard({ stack, onClick }: { stack: StackTemplate; onClick: () => void }) {
+  return (
+    <Paper
+      onClick={onClick}
+      sx={{
+        p: 1.25,
+        bgcolor: 'rgba(30, 41, 59, 0.5)',
+        border: 1,
+        borderColor: 'grey.700',
+        cursor: 'pointer',
+        transition: 'all 0.15s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.25,
+        '&:hover': {
+          borderColor: 'secondary.main',
+          bgcolor: 'rgba(168, 85, 247, 0.08)',
+          transform: 'translateX(2px)',
+        },
+      }}
+    >
+      <Box
+        sx={{
+          width: 32,
+          height: 32,
+          background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+          borderRadius: 0.75,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <Iconify icon={stack.icon} width={18} sx={{ color: 'white' }} />
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="subtitle2" noWrap sx={{ fontSize: '0.8rem', lineHeight: 1.3 }}>
+          {stack.name}
+        </Typography>
+        <Typography variant="caption" noWrap color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+          {stack.description}
+        </Typography>
+      </Box>
+      <Chip label={`${stack.services.length}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(168, 85, 247, 0.15)', color: 'secondary.light' }} />
+    </Paper>
+  );
+}
+
+export function ServicePalette({ onAddService, onAddStack, width = 280 }: ServicePaletteProps) {
   const [search, setSearch] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
