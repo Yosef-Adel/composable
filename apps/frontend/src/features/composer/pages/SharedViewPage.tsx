@@ -40,7 +40,7 @@ function SharedViewInner() {
 
   useEffect(() => {
     if (!token) return;
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+    const baseUrl = import.meta.env.VITE_API_URL || '/api/v1';
     fetch(`${baseUrl}/shared/${token}`)
       .then(async (res) => {
         if (!res.ok) throw new Error('Project not found');
