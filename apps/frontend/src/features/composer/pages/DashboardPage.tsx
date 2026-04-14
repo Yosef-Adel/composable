@@ -60,7 +60,7 @@ import { generateYaml } from '../utils/yamlGenerator';
 import { generateDocs } from '../utils/docsGenerator';
 import { parseDockerCompose } from '../utils/yamlImporter';
 import { validateCompose } from '../utils/composeValidator';
-import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
+import { autoLayout } from '../utils/autoLayout';
 import type { BuildingBlockType, NodeConfig, ServiceConfig } from '../types';
 import type { StackTemplate } from '../data/stackTemplates';
 import { HANDLE_IDS } from '../components/ServiceNode';
@@ -334,15 +334,6 @@ function DashboardPageInner() {
   const handleFitView = useCallback(() => {
     reactFlowInstance.fitView({ padding: 0.2, duration: 300 });
   }, [reactFlowInstance]);
-
-  const handleAutoLayout = useCallback(
-    (direction: LayoutDirection = 'TB') => {
-      const layouted = autoLayout(nodes, edges, direction);
-      dispatch(setNodes(layouted));
-      setTimeout(() => reactFlowInstance.fitView({ padding: 0.2, duration: 300 }), 50);
-    },
-    [nodes, edges, dispatch, reactFlowInstance],
-  );
 
   const handleImportYaml = useCallback(() => {
     const input = document.createElement('input');
