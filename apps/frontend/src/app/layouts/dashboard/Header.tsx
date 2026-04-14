@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, IconButton, Typography, Box, Menu, MenuItem, Avatar } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { Iconify } from '@composable/ui-kit';
-import { ThemeToggle } from '@shared/components/ThemeToggle';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { logoutAsync } from '@/features/auth/store/authSlice';
 
@@ -71,8 +70,6 @@ export function Header({ onOpenNav }: HeaderProps) {
         </Box>
 
         <Box sx={{ flexGrow: 1 }} />
-
-        <ThemeToggle />
 
         {user && (
           <>

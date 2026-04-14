@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, Typography, Button, Grid, AppBar, Toolbar, IconButton, Alert, CircularProgress, TextField, InputAdornment } from '@mui/material';
+import { Box, Container, Typography, Button, Grid, AppBar, Toolbar, IconButton, Alert, CircularProgress, TextField, InputAdornment, Avatar, Menu, MenuItem } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchProjects, createProjectAsync, deleteProjectAsync, setCurrentProject } from '../store/projectsSlice';
+import { logoutAsync } from '@/features/auth/store/authSlice';
 import { ProjectCard } from '../components/ProjectCard';
 import { NewProjectDialog } from '../components/NewProjectDialog';
 
@@ -11,8 +12,10 @@ export function ProjectsPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { projects, isLoading, error } = useAppSelector((state) => state.projects);
+  const { user } = useAppSelector((state) => state.auth);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [search, setSearch] = useState('');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const filteredProjects = useMemo(
     () => projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())),
@@ -71,6 +74,38 @@ export function ProjectsPage() {
           </Box>
 
           <Box sx={{ flexGrow: 1 }} />
+
+          {user && (
+            <>
+              <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ mr: 1 }}>
+                <Avatar
+                  sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.875rem' }}
+                >
+                  {(user.name?.[0] ?? 'U').toUpperCase()}
+                </Avatar>
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                slotProps={{ paper: { sx: { mt: 1, minWidth: 200 } } }}
+              >
+                <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="subtitle2">{user.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">{user.email}</Typography>
+                </Box>
+                <MenuItem
+                  onClick={() => { dispatch(logoutAsync()); setAnchorEl(null); navigate('/'); }}
+                  sx={{ color: 'error.main', gap: 1 }}
+                >
+                  <Iconify icon="solar:logout-2-bold" width={20} />
+                  Logout
+                </MenuItem>
+              </Menu>
+            </>
+          )}
 
           <Button
             variant="contained"

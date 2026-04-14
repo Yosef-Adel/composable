@@ -4,12 +4,10 @@ import { ThemeProvider } from '@composable/ui-kit/theme';
 import { store } from './store';
 import { router } from './router';
 import { NotificationSnackbar } from './components/NotificationSnackbar';
-import { useAppSelector } from './hooks';
 
 function AppInner() {
-  const themeMode = useAppSelector((state) => state.theme.mode);
   return (
-    <ThemeProvider forcedMode={themeMode}>
+    <ThemeProvider forcedMode="dark">
       <RouterProvider router={router} />
       <NotificationSnackbar />
     </ThemeProvider>

@@ -22,10 +22,14 @@ import {
   Button,
   IconButton,
   CircularProgress,
+  Avatar,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { showNotification } from '@/app/store/notificationSlice';
+import { logoutAsync } from '@/features/auth/store/authSlice';
 import { api } from '@/services/api';
 import {
   addNode as addNodeAction,
@@ -40,7 +44,7 @@ import {
   undo,
   redo,
 } from '../store/composerSlice';
-import { toggleTheme } from '@/app/store/themeSlice';
+
 import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
@@ -78,7 +82,9 @@ function DashboardPageInner() {
   const nodes = useAppSelector((state) => state.composer.nodes);
   const edges = useAppSelector((state) => state.composer.edges);
   const nodeConfigs = useAppSelector((state) => state.composer.nodeConfigs);
-  const themeMode = useAppSelector((state) => state.theme.mode);
+  const user = useAppSelector((state) => state.auth.user);
+
+  const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
 
   const [clipboard, setClipboard] = useState<{nodes: Node[], configs: Record<string, NodeConfig>} | null>(null);
   const [showYamlPanel, setShowYamlPanel] = useState(false);
@@ -477,10 +483,6 @@ function DashboardPageInner() {
           <Box sx={{ flexGrow: 1 }} />
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <IconButton onClick={() => dispatch(toggleTheme())} size="small" sx={{ color: 'grey.400' }} title="Toggle theme">
-              <Iconify icon={themeMode === 'dark' ? 'solar:sun-bold' : 'solar:moon-bold'} width={18} />
-            </IconButton>
-
             <IconButton onClick={() => navigate('/projects')} sx={{ color: 'grey.400' }}>
               <Iconify icon="solar:home-2-bold" width={20} />
             </IconButton>
@@ -639,6 +641,36 @@ function DashboardPageInner() {
             >
               Share
             </Button>
+
+            {user && (
+              <>
+                <IconButton onClick={(e) => setUserMenuAnchor(e.currentTarget)} sx={{ ml: 0.5 }}>
+                  <Avatar sx={{ width: 28, height: 28, bgcolor: 'primary.main', fontSize: '0.8rem' }}>
+                    {(user.name?.[0] ?? 'U').toUpperCase()}
+                  </Avatar>
+                </IconButton>
+                <Menu
+                  anchorEl={userMenuAnchor}
+                  open={Boolean(userMenuAnchor)}
+                  onClose={() => setUserMenuAnchor(null)}
+                  transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                  anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                  slotProps={{ paper: { sx: { mt: 1, minWidth: 200 } } }}
+                >
+                  <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+                    <Typography variant="subtitle2">{user.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">{user.email}</Typography>
+                  </Box>
+                  <MenuItem
+                    onClick={() => { dispatch(logoutAsync()); setUserMenuAnchor(null); navigate('/'); }}
+                    sx={{ color: 'error.main', gap: 1 }}
+                  >
+                    <Iconify icon="solar:logout-2-bold" width={20} />
+                    Logout
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
