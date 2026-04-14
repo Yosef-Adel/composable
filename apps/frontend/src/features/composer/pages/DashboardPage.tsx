@@ -568,20 +568,37 @@ function DashboardPageInner() {
                 const issues = validateCompose(nodeConfigs, edges);
                 const errors = issues.filter((i) => i.severity === 'error');
                 if (errors.length > 0) {
-                  dispatch(showNotification({ message: `Compose has ${errors.length} error(s). Fix them before exporting.`, severity: 'warning' }));
+                  dispatch(showNotification({ message: `Fix ${errors.length} error(s) before exporting`, severity: 'warning' }));
+                  setShowValidation(true);
+                  setShowYamlPanel(false);
+                  setShowDocsPanel(false);
                   return;
                 }
-                const warnings = issues.filter((i) => i.severity === 'warning' || i.severity === 'info');
-                const blob = new Blob([yamlContent], { type: 'text/yaml' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'docker-compose.yml';
-                a.click();
-                URL.revokeObjectURL(url);
-                if (warnings.length > 0) {
-                  dispatch(showNotification({ message: `Exported with ${warnings.length} warning(s)`, severity: 'info' }));
-                }
+                // Download docker-compose.yml + README.md
+                const docs = generateDocs(nodeConfigs, edges, projectName);
+                const composeBlob = new Blob([yamlContent], { type: 'text/yaml' });
+                const docsBlob = new Blob([docs], { type: 'text/markdown' });
+                const composeUrl = URL.createObjectURL(composeBlob);
+                const a1 = document.createElement('a');
+                a1.href = composeUrl;
+                a1.download = 'docker-compose.yml';
+                a1.click();
+                URL.revokeObjectURL(composeUrl);
+                setTimeout(() => {
+                  const docsUrl = URL.createObjectURL(docsBlob);
+                  const a2 = document.createElement('a');
+                  a2.href = docsUrl;
+                  a2.download = 'README.md';
+                  a2.click();
+                  URL.revokeObjectURL(docsUrl);
+                }, 200);
+                const warnings = issues.filter((i) => i.severity === 'warning');
+                dispatch(showNotification({
+                  message: warnings.length > 0
+                    ? `Downloaded with ${warnings.length} warning(s)`
+                    : 'Downloaded docker-compose.yml + README.md',
+                  severity: 'success',
+                }));
               }}
               disabled={!yamlContent}
               sx={{ borderColor: 'grey.700', color: 'grey.300' }}
@@ -601,55 +618,6 @@ function DashboardPageInner() {
               }}
             >
               Docs
-            </Button>
-
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<Iconify icon="solar:rocket-bold" width={16} />}
-              onClick={() => {
-                if (!yamlContent) return;
-                const issues = validateCompose(nodeConfigs, edges);
-                const errors = issues.filter((i) => i.severity === 'error');
-                if (errors.length > 0) {
-                  dispatch(showNotification({ message: `Fix ${errors.length} error(s) before deploying`, severity: 'warning' }));
-                  setShowValidation(true);
-                  setShowYamlPanel(false);
-                  setShowDocsPanel(false);
-                  return;
-                }
-                // Download docker-compose.yml + README.md as a bundle
-                const docs = generateDocs(nodeConfigs, edges, projectName);
-                const composeBlob = new Blob([yamlContent], { type: 'text/yaml' });
-                const docsBlob = new Blob([docs], { type: 'text/markdown' });
-                // Download compose file
-                const composeUrl = URL.createObjectURL(composeBlob);
-                const a1 = document.createElement('a');
-                a1.href = composeUrl;
-                a1.download = 'docker-compose.yml';
-                a1.click();
-                URL.revokeObjectURL(composeUrl);
-                // Download README
-                setTimeout(() => {
-                  const docsUrl = URL.createObjectURL(docsBlob);
-                  const a2 = document.createElement('a');
-                  a2.href = docsUrl;
-                  a2.download = 'README.md';
-                  a2.click();
-                  URL.revokeObjectURL(docsUrl);
-                }, 200);
-                const warnings = issues.filter((i) => i.severity === 'warning');
-                dispatch(showNotification({
-                  message: warnings.length > 0
-                    ? `Deploy files downloaded (${warnings.length} warning(s))`
-                    : 'Deploy files downloaded — run: docker compose up -d',
-                  severity: 'success',
-                }));
-              }}
-              disabled={Object.keys(nodeConfigs).length === 0}
-              sx={{ background: 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)' }}
-            >
-              Deploy
             </Button>
 
             <Button
