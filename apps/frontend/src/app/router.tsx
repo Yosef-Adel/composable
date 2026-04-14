@@ -1,33 +1,74 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
-import { HomePage } from '../features/home/pages/HomePage';
-import { AuthPage } from '../features/auth/pages/AuthPage';
-import { ProjectsPage } from '../features/projects/pages/ProjectsPage';
-import { DashboardPage } from '../features/composer/pages/DashboardPage';
 import { ProtectedRoute } from '../features/auth/components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { PageLoader } from './components/PageLoader';
+import { NotFoundPage } from './pages/NotFoundPage';
+
+const HomePage = lazy(() =>
+  import('../features/home/pages/HomePage').then((m) => ({ default: m.HomePage })),
+);
+const AuthPage = lazy(() =>
+  import('../features/auth/pages/AuthPage').then((m) => ({ default: m.AuthPage })),
+);
+const ProjectsPage = lazy(() =>
+  import('../features/projects/pages/ProjectsPage').then((m) => ({
+    default: m.ProjectsPage,
+  })),
+);
+const DashboardPage = lazy(() =>
+  import('../features/composer/pages/DashboardPage').then((m) => ({
+    default: m.DashboardPage,
+  })),
+);
+
+function SuspenseWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>{children}</Suspense>
+    </ErrorBoundary>
+  );
+}
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <HomePage />,
+    element: (
+      <SuspenseWrapper>
+        <HomePage />
+      </SuspenseWrapper>
+    ),
   },
   {
     path: '/auth',
-    element: <AuthPage />,
+    element: (
+      <SuspenseWrapper>
+        <AuthPage />
+      </SuspenseWrapper>
+    ),
   },
   {
     path: '/projects',
     element: (
-      <ProtectedRoute>
-        <ProjectsPage />
-      </ProtectedRoute>
+      <SuspenseWrapper>
+        <ProtectedRoute>
+          <ProjectsPage />
+        </ProtectedRoute>
+      </SuspenseWrapper>
     ),
   },
   {
     path: '/dashboard/:projectId',
     element: (
-      <ProtectedRoute>
-        <DashboardPage />
-      </ProtectedRoute>
+      <SuspenseWrapper>
+        <ProtectedRoute>
+          <DashboardPage />
+        </ProtectedRoute>
+      </SuspenseWrapper>
     ),
+  },
+  {
+    path: '*',
+    element: <NotFoundPage />,
   },
 ]);

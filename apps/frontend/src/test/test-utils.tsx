@@ -7,13 +7,15 @@ import authReducer from '@/features/auth/store/authSlice';
 import projectsReducer from '@/features/projects/store/projectsSlice';
 import composerReducer from '@/features/composer/store/composerSlice';
 
-export function createTestStore(preloadedState?: any) {
+const rootReducer = {
+  auth: authReducer,
+  projects: projectsReducer,
+  composer: composerReducer,
+};
+
+export function createTestStore(preloadedState?: Parameters<typeof configureStore>[0]['preloadedState']) {
   return configureStore({
-    reducer: {
-      auth: authReducer,
-      projects: projectsReducer,
-      composer: composerReducer,
-    },
+    reducer: rootReducer,
     preloadedState,
   });
 }

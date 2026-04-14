@@ -15,6 +15,18 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-mui': ['@mui/material', '@mui/icons-material'],
+          'vendor-reactflow': ['reactflow'],
+          'vendor-redux': ['@reduxjs/toolkit', 'react-redux'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'happy-dom',

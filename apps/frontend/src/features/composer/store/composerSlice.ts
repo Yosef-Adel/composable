@@ -25,7 +25,9 @@ const initialState: ComposerState = {
   isLoading: false,
 };
 
-let nodeCounter = Date.now();
+function generateNodeId(): string {
+  return crypto.randomUUID();
+}
 
 const composerSlice = createSlice({
   name: 'composer',
@@ -82,7 +84,7 @@ const composerSlice = createSlice({
       action: PayloadAction<{ blockType: BuildingBlockType; position: { x: number; y: number } }>
     ) => {
       const { blockType, position } = action.payload;
-      const id = `${blockType}-${++nodeCounter}`;
+      const id = generateNodeId();
 
       const newNode: Node = {
         id,

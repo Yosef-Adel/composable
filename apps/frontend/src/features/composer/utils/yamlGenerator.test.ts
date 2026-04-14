@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateYaml } from './yamlGenerator';
-import type { ServiceConfig, VolumeConfig, NetworkConfig, EnvironmentConfig } from '../types';
+import type { ServiceConfig } from '../types';
 import type { Edge } from 'reactflow';
 
 describe('generateYaml', () => {

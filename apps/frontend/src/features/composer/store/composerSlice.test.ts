@@ -9,7 +9,6 @@ import {
   loadProjectData,
   clearComposer,
   applyNodeChangesAction,
-  applyEdgeChangesAction,
 } from './composerSlice';
 
 function createStore(preloadedState?: any) {
