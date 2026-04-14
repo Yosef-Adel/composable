@@ -142,6 +142,14 @@ export function ServicePalette({ onAddService, onAddStack, width = 280 }: Servic
     );
   }, [search]);
 
+  const filteredStacks = useMemo(() => {
+    if (!search.trim()) return STACK_TEMPLATES;
+    const q = search.toLowerCase();
+    return STACK_TEMPLATES.filter(
+      (s) => s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q),
+    );
+  }, [search]);
+
   const groupedTemplates = useMemo(() => {
     const groups = new Map<string, ServiceTemplate[]>();
     for (const cat of TEMPLATE_CATEGORIES) {
@@ -253,6 +261,47 @@ export function ServicePalette({ onAddService, onAddStack, width = 280 }: Servic
           </Box>
         )}
       </Box>
+
+      <Divider sx={{ borderColor: 'grey.800' }} />
+
+      {/* Stack Templates */}
+      {filteredStacks.length > 0 && (
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <Box
+            onClick={() => toggleCategory('__stacks__')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              mb: 0.5,
+              '&:hover': { '& .cat-label': { color: 'grey.200' } },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <Typography className="cat-label" variant="caption" sx={{ fontWeight: 600, color: 'secondary.light', textTransform: 'uppercase', fontSize: '0.65rem', letterSpacing: '0.05em' }}>
+                Stacks
+              </Typography>
+              <Chip label={filteredStacks.length} size="small" sx={{ height: 16, fontSize: '0.6rem', bgcolor: 'rgba(168, 85, 247, 0.12)' }} />
+            </Box>
+            <Iconify
+              icon="solar:alt-arrow-down-line-duotone"
+              width={14}
+              sx={{ color: 'grey.500', transform: expandedCategory === '__stacks__' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+            />
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem', display: 'block', mb: 0.75 }}>
+            Pre-built multi-service configurations
+          </Typography>
+          <Collapse in={expandedCategory === '__stacks__' || !!search.trim()}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+              {filteredStacks.map((stack) => (
+                <StackCard key={stack.id} stack={stack} onClick={() => onAddStack?.(stack)} />
+              ))}
+            </Box>
+          </Collapse>
+        </Box>
+      )}
 
       <Divider sx={{ borderColor: 'grey.800' }} />
 

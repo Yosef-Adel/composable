@@ -1,4 +1,4 @@
-import type { ServiceConfig, VolumeConfig, NetworkConfig, NodeConfig } from '../types';
+import type { ServiceConfig } from '../types';
 
 export interface StackTemplate {
   id: string;

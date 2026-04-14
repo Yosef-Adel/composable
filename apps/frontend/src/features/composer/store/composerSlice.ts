@@ -432,9 +432,9 @@ const composerSlice = createSlice({
 
         switch (connType) {
           case 'depends':
-            sourceHandle = HANDLE_IDS.DEPENDS_ON;
-            targetHandle = HANDLE_IDS.DEPENDS_ON;
-            edgeColor = EDGE_COLORS.depends_on;
+            sourceHandle = HANDLE_IDS.DEPENDS_OUT;
+            targetHandle = HANDLE_IDS.DEPENDS_IN;
+            edgeColor = EDGE_COLORS.depends;
             break;
           case 'volume':
             sourceHandle = HANDLE_IDS.VOLUME;

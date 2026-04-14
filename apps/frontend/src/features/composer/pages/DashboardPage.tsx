@@ -28,6 +28,7 @@ import { showNotification } from '@/app/store/notificationSlice';
 import { api } from '@/services/api';
 import {
   addNode as addNodeAction,
+  addStack as addStackAction,
   applyNodeChangesAction,
   applyEdgeChangesAction,
   addConnection,
@@ -51,6 +52,7 @@ import { parseDockerCompose } from '../utils/yamlImporter';
 import { validateCompose } from '../utils/composeValidator';
 import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
 import type { BuildingBlockType, ServiceConfig } from '../types';
+import type { StackTemplate } from '../data/stackTemplates';
 import { HANDLE_IDS } from '../components/ServiceNode';
 
 // Must be defined outside the component to keep a stable reference
@@ -248,6 +250,21 @@ function DashboardPageInner() {
             y: Math.random() * 300 + 100,
           },
           template,
+        })
+      );
+    },
+    [dispatch]
+  );
+
+  const handleAddStack = useCallback(
+    (stack: StackTemplate) => {
+      dispatch(
+        addStackAction({
+          stack,
+          origin: {
+            x: Math.random() * 200 + 50,
+            y: Math.random() * 200 + 50,
+          },
         })
       );
     },
@@ -542,7 +559,7 @@ function DashboardPageInner() {
       {/* Main Content */}
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* Left: Service Palette */}
-        <ServicePalette onAddService={handleAddService} width={leftPanelWidth} />
+        <ServicePalette onAddService={handleAddService} onAddStack={handleAddStack} width={leftPanelWidth} />
         <ResizeHandle side="right" width={leftPanelWidth} onResize={setLeftPanelWidth} minWidth={200} maxWidth={450} />
 
         {/* Center: ReactFlow Canvas */}
