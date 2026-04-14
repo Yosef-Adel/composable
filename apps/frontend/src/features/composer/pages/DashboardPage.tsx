@@ -1,26 +1,44 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactFlow, {
   Background,
   Controls,
   BackgroundVariant,
-  addEdge,
-  useNodesState,
-  useEdgesState,
   type Connection,
+  type NodeChange,
+  type EdgeChange,
   type NodeMouseHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Box, AppBar, Toolbar, Typography, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { addNode as addNodeToStore, deleteNode, setSelectedNode } from '../store/composerSlice';
+import {
+  addNode as addNodeAction,
+  applyNodeChangesAction,
+  applyEdgeChangesAction,
+  addConnection,
+  setSelectedNode,
+} from '../store/composerSlice';
 import { updateProject } from '@/features/projects/store/projectsSlice';
 import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
+import { PropertiesPanel } from '../components/PropertiesPanel';
 import { generateYaml } from '../utils/yamlGenerator';
 import type { BuildingBlockType } from '../types';
 
+// Must be defined outside the component to keep a stable reference
 const nodeTypes = {
   service: ServiceNode,
   volume: ServiceNode,
@@ -34,88 +52,75 @@ export function DashboardPage() {
   const dispatch = useAppDispatch();
 
   const { projects } = useAppSelector((state) => state.projects);
-  const { nodes: storeNodes, edges: storeEdges, nodeConfigs } = useAppSelector((state) => state.composer);
+  const nodes = useAppSelector((state) => state.composer.nodes);
+  const edges = useAppSelector((state) => state.composer.edges);
+  const nodeConfigs = useAppSelector((state) => state.composer.nodeConfigs);
 
-  // Use ReactFlow's state management
-  const [nodes, setNodesState, onNodesChange] = useNodesState([]);
-  const [edges, setEdgesState, onEdgesChange] = useEdgesState([]);
   const [showYamlDialog, setShowYamlDialog] = useState(false);
 
   const currentProject = projects.find((p) => p.id === projectId);
-  const yamlContent = generateYaml(nodeConfigs, edges);
+  const yamlContent = useMemo(() => generateYaml(nodeConfigs, edges), [nodeConfigs, edges]);
 
-  // Only sync Redux → ReactFlow (one direction to avoid infinite loop)
-  // Preserve positions of existing nodes to prevent rearrangement when adding new nodes
-  useEffect(() => {
-    setNodesState((currentNodes) => {
-      // Create a map of current node positions
-      const currentPositions = new Map(currentNodes.map(n => [n.id, n.position]));
+  // ── ReactFlow event handlers (all route through Redux) ──────────
 
-      // Merge Redux nodes with current positions
-      return storeNodes.map(node => ({
-        ...node,
-        position: currentPositions.get(node.id) || node.position, // Keep current position if exists
-      }));
-    });
-  }, [storeNodes, setNodesState]);
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      dispatch(applyNodeChangesAction(changes));
 
-  useEffect(() => {
-    setEdgesState(storeEdges);
-  }, [storeEdges, setEdgesState]);
-
-  // Wrap onNodesChange to sync deletions back to Redux
-  const handleNodesChange = useCallback(
-    (changes: any[]) => {
-      onNodesChange(changes);
-
-      // Sync node deletions to Redux (this also removes nodeConfigs and related edges)
-      const removals = changes.filter((c) => c.type === 'remove');
-      if (removals.length > 0) {
-        removals.forEach((removal) => {
-          dispatch(deleteNode(removal.id));
-        });
+      // Keep project node count in sync after removals
+      const hasRemovals = changes.some((c) => c.type === 'remove');
+      if (hasRemovals && projectId) {
+        const remaining = Object.keys(nodeConfigs).length;
+        dispatch(updateProject({ id: projectId, nodeCount: remaining }));
       }
     },
-    [onNodesChange, dispatch]
+    [dispatch, projectId, nodeConfigs]
   );
 
-  // Update project's node count whenever nodes change
-  useEffect(() => {
-    if (projectId && Object.keys(nodeConfigs).length > 0) {
-      dispatch(updateProject({ id: projectId, nodeCount: Object.keys(nodeConfigs).length }));
-    }
-  }, [nodeConfigs, projectId, dispatch]);
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      dispatch(applyEdgeChangesAction(changes));
+    },
+    [dispatch]
+  );
 
   const onConnect = useCallback(
-    (params: Connection) => {
-      setEdgesState((eds) => addEdge({
-        ...params,
-        id: `${params.source}-${params.target}`,
-        animated: true,
-        style: { stroke: '#3b82f6' },
-        type: 'smoothstep',
-      }, eds));
+    (connection: Connection) => {
+      dispatch(addConnection(connection));
     },
-    [setEdgesState]
+    [dispatch]
   );
 
   const onNodeClick: NodeMouseHandler = useCallback(
-    (_, node) => {
+    (_event, node) => {
       dispatch(setSelectedNode(node.id));
     },
     [dispatch]
   );
 
-  const handleAddService = (serviceType: BuildingBlockType) => {
-    dispatch(
-      addNodeToStore({
-        blockType: serviceType,
-        position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-      })
-    );
-  };
+  const onPaneClick = useCallback(() => {
+    dispatch(setSelectedNode(null));
+  }, [dispatch]);
 
-  const handleDownloadYaml = () => {
+  // ── Actions ─────────────────────────────────────────────────────
+
+  const handleAddService = useCallback(
+    (serviceType: BuildingBlockType) => {
+      dispatch(
+        addNodeAction({
+          blockType: serviceType,
+          position: {
+            x: Math.random() * 400 + 100,
+            y: Math.random() * 300 + 100,
+          },
+        })
+      );
+    },
+    [dispatch]
+  );
+
+  const handleDownloadYaml = useCallback(() => {
+    if (!yamlContent) return;
     const blob = new Blob([yamlContent], { type: 'text/yaml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -123,11 +128,9 @@ export function DashboardPage() {
     a.download = 'docker-compose.yml';
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [yamlContent]);
 
-  const handleBackToProjects = () => {
-    navigate('/projects');
-  };
+  // ── Render ──────────────────────────────────────────────────────
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
@@ -167,7 +170,7 @@ export function DashboardPage() {
           <Box sx={{ flexGrow: 1 }} />
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <IconButton onClick={handleBackToProjects} sx={{ color: 'grey.400' }}>
+            <IconButton onClick={() => navigate('/projects')} sx={{ color: 'grey.400' }}>
               <Iconify icon="solar:home-2-bold" width={20} />
             </IconButton>
 
@@ -196,9 +199,7 @@ export function DashboardPage() {
               variant="contained"
               size="small"
               startIcon={<Iconify icon="solar:rocket-bold" width={16} />}
-              sx={{
-                background: 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)',
-              }}
+              sx={{ background: 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)' }}
             >
               Deploy
             </Button>
@@ -208,22 +209,22 @@ export function DashboardPage() {
 
       {/* Main Content */}
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Service Palette */}
+        {/* Left: Service Palette */}
         <ServicePalette onAddService={handleAddService} />
 
-        {/* ReactFlow Canvas */}
+        {/* Center: ReactFlow Canvas */}
         <Box sx={{ flex: 1, position: 'relative' }}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
-            onNodesChange={handleNodesChange}
+            onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
-            style={{
-              background: '#0f172a',
-            }}
+            deleteKeyCode={['Backspace', 'Delete']}
+            style={{ background: '#0f172a' }}
           >
             <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#334155" />
             <Controls
@@ -260,9 +261,12 @@ export function DashboardPage() {
             </Box>
           )}
         </Box>
+
+        {/* Right: Properties Panel */}
+        <PropertiesPanel />
       </Box>
 
-      {/* YAML Dialog */}
+      {/* YAML Preview Dialog */}
       <Dialog
         open={showYamlDialog}
         onClose={() => setShowYamlDialog(false)}

@@ -1,70 +1,102 @@
-import type { NodeConfig, ServiceConfig, VolumeConfig, NetworkConfig } from '../types';
+import type { NodeConfig, ServiceConfig, VolumeConfig, NetworkConfig, EnvironmentConfig } from '../types';
 import type { Edge } from 'reactflow';
 
-export function generateYaml(nodeConfigs: Record<string, NodeConfig>, _edges: Edge[]): string {
-  const services: Record<string, any> = {};
-  const volumes: Record<string, any> = {};
-  const networks: Record<string, any> = {};
+export function generateYaml(nodeConfigs: Record<string, NodeConfig>, edges: Edge[]): string {
+  const services: Record<string, Record<string, unknown>> = {};
+  const volumes: Record<string, Record<string, unknown>> = {};
+  const networks: Record<string, Record<string, unknown>> = {};
 
-  // Process all nodes
-  Object.values(nodeConfigs).forEach((config) => {
-    if (config.type === 'service') {
-      const serviceConfig = config as ServiceConfig;
-      services[serviceConfig.name] = {
-        image: serviceConfig.image,
-        ...(serviceConfig.ports.length > 0 && {
-          ports: serviceConfig.ports.map((p) => `${p.host}:${p.container}`),
-        }),
-        ...(serviceConfig.environment.length > 0 && {
-          environment: serviceConfig.environment.reduce(
-            (acc, env) => ({ ...acc, [env.key]: env.value }),
-            {}
-          ),
-        }),
-        ...(serviceConfig.volumes.length > 0 && {
-          volumes: serviceConfig.volumes.map((v) => `${v.host}:${v.container}`),
-        }),
-        ...(serviceConfig.networks.length > 0 && {
-          networks: serviceConfig.networks,
-        }),
-        ...(serviceConfig.restart && { restart: serviceConfig.restart }),
-        ...(serviceConfig.command && { command: serviceConfig.command }),
-      };
-    } else if (config.type === 'volume') {
-      const volumeConfig = config as VolumeConfig;
-      volumes[volumeConfig.name] = {
-        driver: volumeConfig.driver || 'local',
-      };
+  // Index configs by id for fast lookup
+  const configById = new Map(Object.entries(nodeConfigs));
+
+  // Build adjacency: source → target[] from edges
+  const connections = new Map<string, string[]>();
+  for (const edge of edges) {
+    const list = connections.get(edge.source) ?? [];
+    list.push(edge.target);
+    connections.set(edge.source, list);
+
+    // Also store reverse so a service connected *to* a volume/network picks it up
+    const rList = connections.get(edge.target) ?? [];
+    rList.push(edge.source);
+    connections.set(edge.target, rList);
+  }
+
+  // First pass: collect volumes and networks so services can reference them
+  for (const config of Object.values(nodeConfigs)) {
+    if (config.type === 'volume') {
+      const vc = config as VolumeConfig;
+      volumes[vc.name] = { driver: vc.driver || 'local' };
     } else if (config.type === 'network') {
-      const networkConfig = config as NetworkConfig;
-      networks[networkConfig.name] = {
-        driver: networkConfig.driver || 'bridge',
-      };
+      const nc = config as NetworkConfig;
+      networks[nc.name] = { driver: nc.driver || 'bridge' };
     }
-  });
-
-  // Build YAML structure
-  const yamlObject: any = {
-    version: '3.8',
-  };
-
-  if (Object.keys(services).length > 0) {
-    yamlObject.services = services;
   }
 
-  if (Object.keys(volumes).length > 0) {
-    yamlObject.volumes = volumes;
+  // Second pass: build services, enriching them with connected volumes/networks/envs
+  for (const config of Object.values(nodeConfigs)) {
+    if (config.type !== 'service') continue;
+    const sc = config as ServiceConfig;
+
+    const svc: Record<string, unknown> = { image: sc.image };
+
+    // Ports from config
+    if (sc.ports.length > 0) {
+      svc.ports = sc.ports.map((p) => `${p.host}:${p.container}`);
+    }
+
+    // Gather environment from config + connected EnvironmentConfig nodes
+    const envMap: Record<string, string> = {};
+    for (const env of sc.environment) {
+      if (env.key) envMap[env.key] = env.value;
+    }
+
+    // Gather volumes and networks from config + connected nodes
+    const volumeEntries = [...sc.volumes.map((v) => `${v.host}:${v.container}`)];
+    const networkEntries = [...sc.networks];
+
+    const neighbors = connections.get(config.id) ?? [];
+    for (const neighborId of neighbors) {
+      const neighbor = configById.get(neighborId);
+      if (!neighbor) continue;
+
+      if (neighbor.type === 'volume') {
+        const vn = neighbor as VolumeConfig;
+        const mount = `${vn.name}:/data`;
+        if (!volumeEntries.includes(mount)) volumeEntries.push(mount);
+      } else if (neighbor.type === 'network') {
+        const nn = neighbor as NetworkConfig;
+        if (!networkEntries.includes(nn.name)) networkEntries.push(nn.name);
+      } else if (neighbor.type === 'environment') {
+        const en = neighbor as EnvironmentConfig;
+        for (const v of en.variables) {
+          if (v.key) envMap[v.key] = v.value;
+        }
+      }
+    }
+
+    if (Object.keys(envMap).length > 0) svc.environment = envMap;
+    if (volumeEntries.length > 0) svc.volumes = volumeEntries;
+    if (networkEntries.length > 0) svc.networks = networkEntries;
+    if (sc.restart) svc.restart = sc.restart;
+    if (sc.command) svc.command = sc.command;
+
+    services[sc.name] = svc;
   }
 
-  if (Object.keys(networks).length > 0) {
-    yamlObject.networks = networks;
-  }
+  // Build top-level YAML object
+  const yamlObject: Record<string, unknown> = {};
 
-  // Convert to YAML string (simple implementation)
+  if (Object.keys(services).length > 0) yamlObject.services = services;
+  if (Object.keys(volumes).length > 0) yamlObject.volumes = volumes;
+  if (Object.keys(networks).length > 0) yamlObject.networks = networks;
+
+  if (Object.keys(yamlObject).length === 0) return '';
+
   return convertToYamlString(yamlObject);
 }
 
-function convertToYamlString(obj: any, indent = 0): string {
+function convertToYamlString(obj: Record<string, unknown>, indent = 0): string {
   const spaces = '  '.repeat(indent);
   let yaml = '';
 
@@ -73,18 +105,18 @@ function convertToYamlString(obj: any, indent = 0): string {
       yaml += `${spaces}${key}:\n`;
     } else if (Array.isArray(value)) {
       yaml += `${spaces}${key}:\n`;
-      value.forEach((item) => {
-        if (typeof item === 'object') {
-          yaml += `${spaces}  - ${convertToYamlString(item, indent + 2).trim()}\n`;
+      for (const item of value) {
+        if (typeof item === 'object' && item !== null) {
+          yaml += `${spaces}  - ${convertToYamlString(item as Record<string, unknown>, indent + 2).trim()}\n`;
         } else {
-          yaml += `${spaces}  - ${item}\n`;
+          yaml += `${spaces}  - ${String(item)}\n`;
         }
-      });
+      }
     } else if (typeof value === 'object') {
       yaml += `${spaces}${key}:\n`;
-      yaml += convertToYamlString(value, indent + 1);
+      yaml += convertToYamlString(value as Record<string, unknown>, indent + 1);
     } else {
-      yaml += `${spaces}${key}: ${value}\n`;
+      yaml += `${spaces}${key}: ${String(value)}\n`;
     }
   }
 
