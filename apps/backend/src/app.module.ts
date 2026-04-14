@@ -11,6 +11,7 @@ import { UsersModule } from './modules/users/users.module';
 import { MailModule } from './modules/mail/mail.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { ProjectsModule } from './modules/projects/projects.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 @Module({
@@ -64,6 +65,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
     AuthModule,
     HealthModule,
     AuditModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [

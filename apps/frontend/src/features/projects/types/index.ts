@@ -11,6 +11,8 @@ export interface ProjectsState {
   projects: Project[];
   currentProjectId: string | null;
   isLoading: boolean;
+  error: string | null;
+  total: number;
 }
 
 export interface CreateProjectData {

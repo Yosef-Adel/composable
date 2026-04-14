@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactFlow, {
   Background,
@@ -24,14 +24,15 @@ import {
 } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
+import { api } from '@/services/api';
 import {
   addNode as addNodeAction,
   applyNodeChangesAction,
   applyEdgeChangesAction,
   addConnection,
   setSelectedNode,
+  loadProjectData,
 } from '../store/composerSlice';
-import { updateProject } from '@/features/projects/store/projectsSlice';
 import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
@@ -51,30 +52,73 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  const { projects } = useAppSelector((state) => state.projects);
   const nodes = useAppSelector((state) => state.composer.nodes);
   const edges = useAppSelector((state) => state.composer.edges);
   const nodeConfigs = useAppSelector((state) => state.composer.nodeConfigs);
 
   const [showYamlDialog, setShowYamlDialog] = useState(false);
+  const [projectName, setProjectName] = useState('Composable');
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLoadedRef = useRef(false);
 
-  const currentProject = projects.find((p) => p.id === projectId);
   const yamlContent = useMemo(() => generateYaml(nodeConfigs, edges), [nodeConfigs, edges]);
+
+  // Load composer data from backend
+  useEffect(() => {
+    if (!projectId) return;
+    (async () => {
+      try {
+        const { data: projResp } = await api.get(`/projects/${projectId}`);
+        const project = projResp.data;
+        setProjectName(project.name ?? 'Composable');
+
+        const composerData = project.composerData;
+        if (composerData) {
+          dispatch(
+            loadProjectData({
+              nodes: composerData.nodes ?? [],
+              edges: composerData.edges ?? [],
+              nodeConfigs: composerData.nodeConfigs ?? {},
+            }),
+          );
+        }
+        isLoadedRef.current = true;
+      } catch {
+        // Project not found or unauthorized
+      }
+    })();
+  }, [projectId, dispatch]);
+
+  // Debounced auto-save (2 seconds after last change)
+  useEffect(() => {
+    if (!projectId || !isLoadedRef.current) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      api
+        .put(`/projects/${projectId}/composer`, {
+          nodes,
+          edges,
+          nodeConfigs,
+          nodeCount: nodes.length,
+        })
+        .catch(() => {
+          // Silent fail on autosave
+        });
+    }, 2000);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [projectId, nodes, edges, nodeConfigs]);
 
   // ── ReactFlow event handlers (all route through Redux) ──────────
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       dispatch(applyNodeChangesAction(changes));
-
-      // Keep project node count in sync after removals
-      const hasRemovals = changes.some((c) => c.type === 'remove');
-      if (hasRemovals && projectId) {
-        const remaining = Object.keys(nodeConfigs).length;
-        dispatch(updateProject({ id: projectId, nodeCount: remaining }));
-      }
     },
-    [dispatch, projectId, nodeConfigs]
+    [dispatch],
   );
 
   const onEdgesChange = useCallback(
@@ -160,7 +204,7 @@ export function DashboardPage() {
               <Iconify icon="solar:box-bold" width={24} sx={{ color: 'white' }} />
             </Box>
             <Box>
-              <Typography variant="h6">{currentProject?.name || 'Composable'}</Typography>
+              <Typography variant="h6">{projectName}</Typography>
               <Typography variant="caption" color="text.secondary">
                 Docker Compose Project
               </Typography>

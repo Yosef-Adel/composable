@@ -1,20 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, Typography, Button, Grid, AppBar, Toolbar, IconButton } from '@mui/material';
+import { Box, Container, Typography, Button, Grid, AppBar, Toolbar, IconButton, Alert, CircularProgress } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { createProject, deleteProject, setCurrentProject } from '../store/projectsSlice';
+import { fetchProjects, createProjectAsync, deleteProjectAsync, setCurrentProject } from '../store/projectsSlice';
 import { ProjectCard } from '../components/ProjectCard';
 import { NewProjectDialog } from '../components/NewProjectDialog';
 
 export function ProjectsPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { projects } = useAppSelector((state) => state.projects);
+  const { projects, isLoading, error } = useAppSelector((state) => state.projects);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
 
+  useEffect(() => {
+    dispatch(fetchProjects());
+  }, [dispatch]);
+
   const handleCreateProject = (name: string, description: string) => {
-    dispatch(createProject({ name, description }));
+    dispatch(createProjectAsync({ name, description }));
   };
 
   const handleOpenProject = (projectId: string) => {
@@ -23,7 +27,7 @@ export function ProjectsPage() {
   };
 
   const handleDeleteProject = (projectId: string) => {
-    dispatch(deleteProject(projectId));
+    dispatch(deleteProjectAsync(projectId));
   };
 
   return (
@@ -82,7 +86,17 @@ export function ProjectsPage() {
 
       {/* Content */}
       <Container maxWidth="xl" sx={{ py: 6 }}>
-        {projects.length === 0 ? (
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        {isLoading && projects.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : projects.length === 0 ? (
           <Box
             sx={{
               display: 'flex',

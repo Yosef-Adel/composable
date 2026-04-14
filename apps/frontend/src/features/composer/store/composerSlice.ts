@@ -11,42 +11,16 @@ import type {
   BuildingBlockType,
 } from '../types';
 
-const COMPOSER_DATA_KEY = 'composable_composer_data';
-
 interface PersistedComposerData {
   nodes: Node[];
   edges: Edge[];
   nodeConfigs: Record<string, NodeConfig>;
 }
 
-const loadComposerFromStorage = (): PersistedComposerData => {
-  try {
-    const stored = localStorage.getItem(COMPOSER_DATA_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as PersistedComposerData;
-      return {
-        nodes: parsed.nodes ?? [],
-        edges: parsed.edges ?? [],
-        nodeConfigs: parsed.nodeConfigs ?? {},
-      };
-    }
-  } catch {
-    // Ignore corrupted storage
-  }
-  return { nodes: [], edges: [], nodeConfigs: {} };
-};
-
-const saveToStorage = (state: ComposerState) => {
-  const data: PersistedComposerData = {
-    nodes: state.nodes,
-    edges: state.edges,
-    nodeConfigs: state.nodeConfigs,
-  };
-  localStorage.setItem(COMPOSER_DATA_KEY, JSON.stringify(data));
-};
-
 const initialState: ComposerState = {
-  ...loadComposerFromStorage(),
+  nodes: [],
+  edges: [],
+  nodeConfigs: {},
   selectedNodeId: null,
   isLoading: false,
 };
@@ -83,12 +57,10 @@ const composerSlice = createSlice({
         }
       }
 
-      saveToStorage(state);
     },
 
     applyEdgeChangesAction: (state, action: PayloadAction<EdgeChange[]>) => {
       state.edges = applyEdgeChanges(action.payload, state.edges) as Edge[];
-      saveToStorage(state);
     },
 
     addConnection: (state, action: PayloadAction<Connection>) => {
@@ -101,7 +73,6 @@ const composerSlice = createSlice({
         style: { stroke: '#3b82f6' },
       } as Edge;
       state.edges = addEdge(newEdge, state.edges) as Edge[];
-      saveToStorage(state);
     },
 
     // ── Node CRUD ───────────────────────────────────────────────────
@@ -166,7 +137,6 @@ const composerSlice = createSlice({
 
       state.nodes.push(newNode);
       state.nodeConfigs[id] = config;
-      saveToStorage(state);
     },
 
     deleteNode: (state, action: PayloadAction<string>) => {
@@ -179,7 +149,6 @@ const composerSlice = createSlice({
       if (state.selectedNodeId === nodeId) {
         state.selectedNodeId = null;
       }
-      saveToStorage(state);
     },
 
     updateNodeConfig: (
@@ -199,7 +168,6 @@ const composerSlice = createSlice({
           node.data = { ...node.data, label: config.name };
         }
       }
-      saveToStorage(state);
     },
 
     // ── Selection ───────────────────────────────────────────────────
@@ -215,7 +183,6 @@ const composerSlice = createSlice({
       state.edges = action.payload.edges;
       state.nodeConfigs = action.payload.nodeConfigs;
       state.selectedNodeId = null;
-      saveToStorage(state);
     },
 
     clearComposer: (state) => {
@@ -223,7 +190,6 @@ const composerSlice = createSlice({
       state.edges = [];
       state.nodeConfigs = {};
       state.selectedNodeId = null;
-      saveToStorage(state);
     },
   },
 });
