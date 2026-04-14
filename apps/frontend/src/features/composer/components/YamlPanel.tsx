@@ -7,9 +7,10 @@ interface YamlPanelProps {
   yaml: string;
   open: boolean;
   onClose: () => void;
+  width?: number;
 }
 
-export function YamlPanel({ yaml, open, onClose }: YamlPanelProps) {
+export function YamlPanel({ yaml, open, onClose, width = 420 }: YamlPanelProps) {
   const editorRef = useRef<any>(null);
 
   const handleEditorMount: OnMount = (editor) => {
@@ -38,7 +39,7 @@ export function YamlPanel({ yaml, open, onClose }: YamlPanelProps) {
   return (
     <Box
       sx={{
-        width: 420,
+        width,
         borderLeft: 1,
         borderColor: 'grey.800',
         bgcolor: 'rgba(15, 23, 42, 0.95)',

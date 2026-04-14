@@ -46,7 +46,7 @@ const typeLabels: Record<string, { label: string; icon: string; color: string }>
 
 // ── Component ────────────────────────────────────────────────────────
 
-export function PropertiesPanel() {
+export function PropertiesPanel({ width = 320 }: { width?: number }) {
   const dispatch = useAppDispatch();
   const { selectedNodeId, nodeConfigs } = useAppSelector((s) => s.composer);
   const config = selectedNodeId ? nodeConfigs[selectedNodeId] : null;
@@ -74,7 +74,7 @@ export function PropertiesPanel() {
     return (
       <Box
         sx={{
-          width: 320,
+          width,
           borderLeft: 1,
           borderColor: 'grey.800',
           bgcolor: 'rgba(15, 23, 42, 0.5)',
@@ -102,7 +102,7 @@ export function PropertiesPanel() {
   return (
     <Box
       sx={{
-        width: 320,
+        width,
         borderLeft: 1,
         borderColor: 'grey.800',
         bgcolor: 'rgba(15, 23, 42, 0.5)',

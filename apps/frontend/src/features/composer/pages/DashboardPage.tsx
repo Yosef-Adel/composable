@@ -41,6 +41,7 @@ import { PropertiesPanel } from '../components/PropertiesPanel';
 import { YamlPanel } from '../components/YamlPanel';
 import { ValidationPanel } from '../components/ValidationPanel';
 import { ShareDialog } from '../components/ShareDialog';
+import { ResizeHandle } from '../components/ResizeHandle';
 import { generateYaml } from '../utils/yamlGenerator';
 import { generateDocs } from '../utils/docsGenerator';
 import { parseDockerCompose } from '../utils/yamlImporter';
@@ -70,6 +71,10 @@ function DashboardPageInner() {
   const [showValidation, setShowValidation] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [projectName, setProjectName] = useState('Composable');
+  const [leftPanelWidth, setLeftPanelWidth] = useState(280);
+  const [rightPanelWidth, setRightPanelWidth] = useState(320);
+  const [yamlPanelWidth, setYamlPanelWidth] = useState(420);
+  const [validationPanelWidth, setValidationPanelWidth] = useState(360);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadedRef = useRef(false);
 
@@ -417,10 +422,11 @@ function DashboardPageInner() {
       {/* Main Content */}
       <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         {/* Left: Service Palette */}
-        <ServicePalette onAddService={handleAddService} />
+        <ServicePalette onAddService={handleAddService} width={leftPanelWidth} />
+        <ResizeHandle side="right" width={leftPanelWidth} onResize={setLeftPanelWidth} minWidth={200} maxWidth={450} />
 
         {/* Center: ReactFlow Canvas */}
-        <Box sx={{ flex: 1, position: 'relative' }}>
+        <Box sx={{ flex: 1, position: 'relative', minWidth: 0 }}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -481,13 +487,20 @@ function DashboardPageInner() {
         </Box>
 
         {/* Right: Properties Panel */}
-        <PropertiesPanel />
+        <ResizeHandle side="left" width={rightPanelWidth} onResize={setRightPanelWidth} minWidth={240} maxWidth={500} />
+        <PropertiesPanel width={rightPanelWidth} />
 
         {/* YAML Panel (Monaco Editor) */}
-        <YamlPanel yaml={yamlContent} open={showYamlPanel} onClose={() => setShowYamlPanel(false)} />
+        {showYamlPanel && (
+          <ResizeHandle side="left" width={yamlPanelWidth} onResize={setYamlPanelWidth} minWidth={300} maxWidth={700} />
+        )}
+        <YamlPanel yaml={yamlContent} open={showYamlPanel} onClose={() => setShowYamlPanel(false)} width={yamlPanelWidth} />
 
         {/* Validation Panel */}
-        <ValidationPanel open={showValidation} onClose={() => setShowValidation(false)} />
+        {showValidation && (
+          <ResizeHandle side="left" width={validationPanelWidth} onResize={setValidationPanelWidth} minWidth={280} maxWidth={600} />
+        )}
+        <ValidationPanel open={showValidation} onClose={() => setShowValidation(false)} width={validationPanelWidth} />
       </Box>
 
       {/* Share Dialog */}

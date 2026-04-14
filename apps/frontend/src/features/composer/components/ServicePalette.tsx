@@ -6,6 +6,7 @@ import { SERVICE_TEMPLATES, TEMPLATE_CATEGORIES, type ServiceTemplate } from '..
 
 interface ServicePaletteProps {
   onAddService: (serviceType: BuildingBlockType, template?: Partial<ServiceConfig>) => void;
+  width?: number;
 }
 
 const infraBlocks = [
@@ -79,7 +80,7 @@ function TemplateCard({ template, onClick }: { template: ServiceTemplate; onClic
   );
 }
 
-export function ServicePalette({ onAddService }: ServicePaletteProps) {
+export function ServicePalette({ onAddService, width = 280 }: ServicePaletteProps) {
   const [search, setSearch] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -111,7 +112,7 @@ export function ServicePalette({ onAddService }: ServicePaletteProps) {
   return (
     <Box
       sx={{
-        width: 280,
+        width,
         borderRight: 1,
         borderColor: 'grey.800',
         bgcolor: 'rgba(15, 23, 42, 0.5)',

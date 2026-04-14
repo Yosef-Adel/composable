@@ -14,9 +14,10 @@ const severityConfig: Record<ValidationSeverity, { icon: string; color: string; 
 interface ValidationPanelProps {
   open: boolean;
   onClose: () => void;
+  width?: number;
 }
 
-export function ValidationPanel({ open, onClose }: ValidationPanelProps) {
+export function ValidationPanel({ open, onClose, width = 360 }: ValidationPanelProps) {
   const dispatch = useAppDispatch();
   const nodeConfigs = useAppSelector((s) => s.composer.nodeConfigs);
   const edges = useAppSelector((s) => s.composer.edges);
@@ -37,7 +38,7 @@ export function ValidationPanel({ open, onClose }: ValidationPanelProps) {
   return (
     <Box
       sx={{
-        width: 360,
+        width,
         borderLeft: 1,
         borderColor: 'grey.800',
         bgcolor: 'rgba(15, 23, 42, 0.95)',
