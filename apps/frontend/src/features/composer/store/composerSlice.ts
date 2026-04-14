@@ -422,8 +422,8 @@ const composerSlice = createSlice({
 
       // Add edges from connections
       for (const [sourceName, targetName, connType] of stack.connections ?? []) {
-        const sourceId = nameToId[sourceName];
-        const targetId = nameToId[targetName];
+        let sourceId = nameToId[sourceName];
+        let targetId = nameToId[targetName];
         if (!sourceId || !targetId) continue;
 
         let sourceHandle: string;
@@ -437,14 +437,20 @@ const composerSlice = createSlice({
             edgeColor = EDGE_COLORS.depends;
             break;
           case 'volume':
-            sourceHandle = HANDLE_IDS.VOLUME;
+            // Infra node (volume) is the ReactFlow source (LINK handle, right side)
+            // Service node is the ReactFlow target (VOLUME handle, left side)
+            // In stack definitions, connections are [service, volume], so swap
+            sourceHandle = HANDLE_IDS.LINK;
             targetHandle = HANDLE_IDS.VOLUME;
             edgeColor = EDGE_COLORS.volume;
+            // Swap: infra node becomes source, service becomes target
+            { const tmp = sourceId; sourceId = targetId; targetId = tmp; }
             break;
           case 'network':
-            sourceHandle = HANDLE_IDS.NETWORK;
+            sourceHandle = HANDLE_IDS.LINK;
             targetHandle = HANDLE_IDS.NETWORK;
             edgeColor = EDGE_COLORS.network;
+            { const tmp = sourceId; sourceId = targetId; targetId = tmp; }
             break;
           default:
             sourceHandle = HANDLE_IDS.LINK;

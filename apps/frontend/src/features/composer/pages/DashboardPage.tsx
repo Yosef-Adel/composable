@@ -93,6 +93,7 @@ function DashboardPageInner() {
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [yamlPanelWidth, setYamlPanelWidth] = useState(420);
   const [validationPanelWidth, setValidationPanelWidth] = useState(360);
+  const [canvasTool, setCanvasTool] = useState<'select' | 'hand'>('select');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadedRef = useRef(false);
   const projectIdRef = useRef(projectId);
@@ -352,7 +353,22 @@ function DashboardPageInner() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey)) return;
+      // Skip if typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+
+      // Non-modifier shortcuts
+      if (!e.ctrlKey && !e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case 'h':
+            setCanvasTool('hand');
+            return;
+          case 'v':
+            setCanvasTool('select');
+            return;
+        }
+        return;
+      }
 
       switch (e.key) {
         case 's':
@@ -678,7 +694,10 @@ function DashboardPageInner() {
             deleteKeyCode={['Backspace', 'Delete']}
             snapToGrid
             snapGrid={[16, 16]}
-            style={{ background: '#0f172a' }}
+            panOnDrag={canvasTool === 'hand'}
+            selectionOnDrag={canvasTool === 'select'}
+            panOnScroll
+            style={{ background: '#0f172a', cursor: canvasTool === 'hand' ? 'grab' : 'default' }}
           >
             <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#334155" />
             <Controls
@@ -695,6 +714,55 @@ function DashboardPageInner() {
               nodeColor="#3b82f6"
               maskColor="rgba(15, 23, 42, 0.7)"
             />
+
+            {/* Canvas Tool Switcher */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 10,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 5,
+                display: 'flex',
+                gap: 0.25,
+                bgcolor: 'rgba(30, 41, 59, 0.95)',
+                border: 1,
+                borderColor: 'grey.700',
+                borderRadius: 1,
+                p: 0.25,
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={() => setCanvasTool('select')}
+                title="Select (V)"
+                sx={{
+                  color: canvasTool === 'select' ? 'primary.main' : 'grey.500',
+                  bgcolor: canvasTool === 'select' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                  borderRadius: 0.75,
+                  width: 32,
+                  height: 32,
+                  '&:hover': { bgcolor: canvasTool === 'select' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.05)' },
+                }}
+              >
+                <Iconify icon="solar:cursor-bold" width={18} />
+              </IconButton>
+              <IconButton
+                size="small"
+                onClick={() => setCanvasTool('hand')}
+                title="Hand (H)"
+                sx={{
+                  color: canvasTool === 'hand' ? 'primary.main' : 'grey.500',
+                  bgcolor: canvasTool === 'hand' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                  borderRadius: 0.75,
+                  width: 32,
+                  height: 32,
+                  '&:hover': { bgcolor: canvasTool === 'hand' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.05)' },
+                }}
+              >
+                <Iconify icon="solar:hand-shake-bold" width={18} />
+              </IconButton>
+            </Box>
           </ReactFlow>
 
           {/* Loading Overlay */}

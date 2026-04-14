@@ -49,7 +49,8 @@ function TemplateCard({ template, onClick }: { template: ServiceTemplate; onClic
         transition: 'all 0.15s',
         display: 'flex',
         alignItems: 'center',
-        gap: 1.25,
+        gap: 1,
+        overflow: 'hidden',
         '&:hover': {
           borderColor: 'primary.main',
           bgcolor: 'rgba(59, 130, 246, 0.08)',
@@ -60,6 +61,7 @@ function TemplateCard({ template, onClick }: { template: ServiceTemplate; onClic
       <Box
         sx={{
           width: 32,
+          minWidth: 32,
           height: 32,
           background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
           borderRadius: 0.75,
@@ -71,11 +73,11 @@ function TemplateCard({ template, onClick }: { template: ServiceTemplate; onClic
       >
         <Iconify icon={template.icon} width={18} sx={{ color: 'white' }} />
       </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="subtitle2" noWrap sx={{ fontSize: '0.8rem', lineHeight: 1.3 }}>
+      <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <Typography variant="subtitle2" noWrap sx={{ fontSize: '0.8rem', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {template.name}
         </Typography>
-        <Typography variant="caption" noWrap color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+        <Typography variant="caption" noWrap color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {template.description}
         </Typography>
       </Box>
@@ -96,7 +98,8 @@ function StackCard({ stack, onClick }: { stack: StackTemplate; onClick: () => vo
         transition: 'all 0.15s',
         display: 'flex',
         alignItems: 'center',
-        gap: 1.25,
+        gap: 1,
+        overflow: 'hidden',
         '&:hover': {
           borderColor: 'secondary.main',
           bgcolor: 'rgba(168, 85, 247, 0.08)',
@@ -107,6 +110,7 @@ function StackCard({ stack, onClick }: { stack: StackTemplate; onClick: () => vo
       <Box
         sx={{
           width: 32,
+          minWidth: 32,
           height: 32,
           background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
           borderRadius: 0.75,
@@ -118,15 +122,15 @@ function StackCard({ stack, onClick }: { stack: StackTemplate; onClick: () => vo
       >
         <Iconify icon={stack.icon} width={18} sx={{ color: 'white' }} />
       </Box>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="subtitle2" noWrap sx={{ fontSize: '0.8rem', lineHeight: 1.3 }}>
+      <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <Typography variant="subtitle2" noWrap sx={{ fontSize: '0.8rem', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {stack.name}
         </Typography>
-        <Typography variant="caption" noWrap color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+        <Typography variant="caption" noWrap color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {stack.description}
         </Typography>
       </Box>
-      <Chip label={`${stack.services.length}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(168, 85, 247, 0.15)', color: 'secondary.light' }} />
+      <Chip label={`${stack.services.length}`} size="small" sx={{ height: 18, fontSize: '0.6rem', bgcolor: 'rgba(168, 85, 247, 0.15)', color: 'secondary.light', flexShrink: 0 }} />
     </Paper>
   );
 }
