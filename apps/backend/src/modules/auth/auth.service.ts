@@ -38,6 +38,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly otpExpirationMinutes = 10;
   private readonly saltRounds = 12;
+  private readonly coreOnly: boolean;
   private readonly otpResendCooldownMinutes = 1;
   private otpResendAttempts: Map<string, number> = new Map(); // email -> timestamp
   private readonly otpResendCleanupInterval = 5 * 60 * 1000; // 5 minutes
@@ -49,6 +50,8 @@ export class AuthService {
     private configService: ConfigService,
     private auditService: AuditService,
   ) {
+    this.coreOnly = this.configService.get<string>('CORE_ONLY') === 'true';
+
     // Periodically clean up expired rate-limit entries to prevent memory leak
     setInterval(() => {
       const now = Date.now();
@@ -80,6 +83,15 @@ export class AuthService {
 
     // Create user
     const user = await this.usersService.create(name, email, hashedPassword);
+
+    // In CORE_ONLY (self-hosted) mode, skip email verification
+    if (this.coreOnly) {
+      await this.usersService.verifyEmail(user._id.toString());
+      return {
+        userId: user._id.toString(),
+        message: 'User registered successfully. You can now log in.',
+      };
+    }
 
     // Generate and send OTP
     await this.generateAndSendOtp(user);

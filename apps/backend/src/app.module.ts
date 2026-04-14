@@ -31,6 +31,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
         JWT_REFRESH_SECRET: Joi.string().required(),
         JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
         FRONTEND_URL: Joi.string().default('http://localhost:5173'),
+        CORE_ONLY: Joi.boolean().default(false),
         SMTP_HOST: Joi.string().optional().allow(''),
         SMTP_PORT: Joi.number().optional(),
         SMTP_USER: Joi.string().optional().allow(''),
