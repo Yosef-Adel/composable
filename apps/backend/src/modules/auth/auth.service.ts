@@ -11,6 +11,8 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { AuditService } from '../audit/audit.service';
+import { AuditAction } from '../audit/audit-log.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
@@ -45,6 +47,7 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService,
     private configService: ConfigService,
+    private auditService: AuditService,
   ) {
     // Periodically clean up expired rate-limit entries to prevent memory leak
     setInterval(() => {
@@ -90,7 +93,7 @@ export class AuthService {
   /**
    * Login user and return access token
    */
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
+  async login(loginDto: LoginDto, ip?: string, userAgent?: string): Promise<AuthResponse> {
     const { email, password } = loginDto;
 
     // Find user
@@ -121,6 +124,14 @@ export class AuthService {
       user._id.toString(),
       refreshTokenHash,
     );
+
+    // Audit log
+    await this.auditService.log({
+      userId: user._id.toString(),
+      action: AuditAction.LOGIN,
+      ip,
+      userAgent,
+    });
 
     return {
       accessToken,
@@ -211,11 +222,11 @@ export class AuthService {
   }
 
   /**
-   * Refresh access token using refresh token
+   * Refresh access token using refresh token (with token rotation)
    */
   async refreshToken(
     refreshTokenDto: RefreshTokenDto,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const { refreshToken } = refreshTokenDto;
 
     try {
@@ -240,28 +251,38 @@ export class AuthService {
         user.refreshTokenHash,
       );
       if (!refreshTokenMatch) {
+        // Potential token reuse — invalidate all tokens
+        await this.usersService.updateRefreshTokenHash(
+          user._id.toString(),
+          null,
+        );
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // Generate new access token
-      const accessToken = this.jwtService.sign(
-        {
-          sub: user._id.toString(),
-          email: user.email,
-          roles: user.roles,
-        } as JwtPayload,
-        {
-          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          expiresIn: this.configService.get<string>(
-            'JWT_ACCESS_EXPIRES_IN',
-            '15m',
-          ) as any,
-        },
+      // Generate new token pair (rotation)
+      const tokens = await this.generateTokens(
+        user._id.toString(),
+        user.email,
+        user.roles,
       );
 
-      return { accessToken };
+      // Store new refresh token hash
+      await this.usersService.updateRefreshTokenHash(
+        user._id.toString(),
+        tokens.refreshTokenHash,
+      );
+
+      await this.auditService.log({
+        userId: user._id.toString(),
+        action: AuditAction.TOKEN_REFRESHED,
+      });
+
+      return {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      };
     } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
       this.logger.error('Token refresh failed:', error);
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
@@ -272,6 +293,10 @@ export class AuthService {
    */
   async logout(userId: string): Promise<{ message: string }> {
     await this.usersService.updateRefreshTokenHash(userId, null);
+    await this.auditService.log({
+      userId,
+      action: AuditAction.LOGOUT,
+    });
     return { message: 'Logged out successfully' };
   }
 

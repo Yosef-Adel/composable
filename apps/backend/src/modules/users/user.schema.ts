@@ -48,6 +48,9 @@ export class User extends Document {
   @Prop({ default: null })
   refreshTokenHash?: string;
 
+  @Prop({ default: null })
+  deletedAt?: Date;
+
   // Managed by Mongoose timestamps: true
   createdAt: Date;
   updatedAt: Date;
@@ -55,5 +58,8 @@ export class User extends Document {
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-// Create indexes (email index is created automatically via 'unique: true' on the @Prop decorator)
 UserSchema.index({ 'emailVerification.expiresAt': 1 }, { sparse: true });
+UserSchema.index({ isEmailVerified: 1 });
+UserSchema.index({ roles: 1 });
+UserSchema.index({ createdAt: 1 });
+UserSchema.index({ deletedAt: 1 }, { sparse: true });

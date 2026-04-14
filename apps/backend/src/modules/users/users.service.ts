@@ -23,11 +23,14 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userModel.findOne({ email: email.toLowerCase() });
+    return this.userModel.findOne({
+      email: email.toLowerCase(),
+      deletedAt: null,
+    });
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.userModel.findById(id);
+    return this.userModel.findOne({ _id: id, deletedAt: null });
   }
 
   async updateEmailVerificationOtp(
@@ -69,11 +72,33 @@ export class UsersService {
     );
   }
 
-  async getAllUsers(): Promise<User[]> {
-    return this.userModel.find().select('-password -refreshTokenHash');
+  async getAllUsers(
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: User[]; total: number; page: number; limit: number }> {
+    const [data, total] = await Promise.all([
+      this.userModel
+        .find({ deletedAt: null })
+        .select('-password -refreshTokenHash')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.userModel.countDocuments({ deletedAt: null }).exec(),
+    ]);
+    return { data: data as User[], total, page, limit };
   }
 
   async getUserCount(): Promise<number> {
-    return this.userModel.countDocuments();
+    return this.userModel.countDocuments({ deletedAt: null });
+  }
+
+  async softDelete(userId: string): Promise<User | null> {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { deletedAt: new Date(), refreshTokenHash: null },
+      { new: true },
+    );
   }
 }

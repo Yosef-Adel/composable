@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -9,6 +9,9 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { MailModule } from './modules/mail/mail.module';
+import { HealthModule } from './modules/health/health.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 @Module({
   imports: [
@@ -49,6 +52,9 @@ import { MailModule } from './modules/mail/mail.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>('MONGODB_URI'),
+        maxPoolSize: 10,
+        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 5000,
       }),
       inject: [ConfigService],
     }),
@@ -56,6 +62,8 @@ import { MailModule } from './modules/mail/mail.module';
     UsersModule,
     MailModule,
     AuthModule,
+    HealthModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [
@@ -64,4 +72,8 @@ import { MailModule } from './modules/mail/mail.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}

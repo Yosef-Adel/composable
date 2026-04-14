@@ -72,8 +72,8 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Email not verified' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Request() req: any): Promise<AuthResponse> {
+    return this.authService.login(loginDto, req.ip, req.headers['user-agent']);
   }
 
   @Post('verify-email')

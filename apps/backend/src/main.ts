@@ -3,6 +3,8 @@ import { ValidationPipe, Logger, INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor';
 
 function setupSwagger(app: INestApplication): void {
   const config = new DocumentBuilder()
@@ -47,6 +49,15 @@ async function bootstrap() {
 
   // Security headers
   app.use(helmet());
+
+  // Global prefix for API versioning
+  app.setGlobalPrefix('api/v1', { exclude: ['health', 'health/ready'] });
+
+  // Global exception filter
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Global response envelope
+  app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
 
   // Enable global validation
   app.useGlobalPipes(
