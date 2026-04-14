@@ -6,13 +6,14 @@ services:
     volumes:
       - mongo-data:/data/db
     environment:
-      MONGO_INITDB_ROOT_USERNAME: composable
-      MONGO_INITDB_ROOT_PASSWORD: composable_dev
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-composable}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-composable_dev}
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh --quiet
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
     build:
@@ -23,15 +24,16 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      MONGODB_URI: mongodb://composable:composable_dev@mongodb:27017/composable?authSource=admin
-      JWT_SECRET: change-me-in-production
-      JWT_REFRESH_SECRET: change-me-refresh-in-production
+      MONGODB_URI: mongodb://${MONGO_USER:-composable}:${MONGO_PASSWORD:-composable_dev}@mongodb:27017/composable?authSource=admin
+      JWT_ACCESS_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-in-production}
       JWT_EXPIRATION: 15m
       JWT_REFRESH_EXPIRATION: 7d
-      FRONTEND_URL: http://localhost:5173
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
     depends_on:
       mongodb:
         condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build:
@@ -41,6 +43,7 @@ services:
       - "80:80"
     depends_on:
       - backend
+    restart: unless-stopped
 
 volumes:
   mongo-data:
