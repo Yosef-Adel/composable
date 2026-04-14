@@ -48,11 +48,14 @@ export const loginAsync = createAsyncThunk<
 export const signupAsync = createAsyncThunk<
   { userId: string; message: string; email: string },
   Omit<SignupCredentials, 'confirmPassword'>,
-  { rejectValue: string }
->('auth/signup', async (credentials, { rejectWithValue }) => {
+  { rejectValue: string; dispatch: any }
+>('auth/signup', async (credentials, { rejectWithValue, dispatch }) => {
   try {
     const { data } = await api.post('/auth/register', credentials);
-    return { ...(data.data as { userId: string; message: string }), email: credentials.email };
+    const result = { ...(data.data as { userId: string; message: string }), email: credentials.email };
+    // Auto-login after signup (backend auto-verifies when SMTP is not configured)
+    dispatch(loginAsync({ email: credentials.email, password: credentials.password }));
+    return result;
   } catch (error) {
     return rejectWithValue(extractErrorMessage(error));
   }
@@ -167,12 +170,10 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(signupAsync.fulfilled, (state, action) => {
+      .addCase(signupAsync.fulfilled, (state) => {
         state.isLoading = false;
-        state.requiresVerification = true;
-        state.pendingUserId = action.payload.userId;
-        state.pendingEmail = action.payload.email;
         state.error = null;
+        // Don't set requiresVerification — auto-login is dispatched
       })
       .addCase(signupAsync.rejected, (state, action) => {
         state.isLoading = false;

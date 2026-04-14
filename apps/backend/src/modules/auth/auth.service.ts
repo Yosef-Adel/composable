@@ -50,7 +50,10 @@ export class AuthService {
     private configService: ConfigService,
     private auditService: AuditService,
   ) {
-    this.coreOnly = this.configService.get<string>('CORE_ONLY') === 'true';
+    // Auto-enable CORE_ONLY when SMTP isn't configured (e.g. local dev)
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const explicitCoreOnly = this.configService.get<string>('CORE_ONLY') === 'true';
+    this.coreOnly = explicitCoreOnly || !smtpHost;
 
     // Periodically clean up expired rate-limit entries to prevent memory leak
     setInterval(() => {

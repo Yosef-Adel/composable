@@ -7,20 +7,17 @@ import { AuthBackground } from '../components/AuthBackground';
 import { AuthHeader } from '../components/AuthHeader';
 import { AuthModeToggle } from '../components/AuthModeToggle';
 import { AuthForm } from '../components/AuthForm';
-import { OtpVerificationForm } from '../components/OtpVerificationForm';
 import { useAuthForm } from '../hooks/useAuthForm';
 import type { AuthMode } from '../types';
 
 export function AuthPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { isLoading, isAuthenticated, error, requiresVerification } = useAppSelector(
+  const { isLoading, isAuthenticated, error } = useAppSelector(
     (state) => state.auth,
   );
   const [mode, setMode] = useState<AuthMode>('login');
-  const { formData, errors, validateForm, updateFormData, resetForm } = useAuthForm(
-    mode === 'verify' ? 'signup' : mode,
-  );
+  const { formData, errors, validateForm, updateFormData, resetForm } = useAuthForm(mode);
 
   const handleModeChange = (newMode: AuthMode) => {
     setMode(newMode);
@@ -52,13 +49,6 @@ export function AuthPage() {
       );
     }
   };
-
-  // Switch to verify mode after successful signup
-  useEffect(() => {
-    if (requiresVerification) {
-      setMode('verify');
-    }
-  }, [requiresVerification]);
 
   // Navigate when auth succeeds
   useEffect(() => {
@@ -101,42 +91,36 @@ export function AuthPage() {
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
           }}
         >
-          {mode === 'verify' ? (
-            <OtpVerificationForm />
-          ) : (
-            <>
-              <AuthModeToggle mode={mode} onModeChange={handleModeChange} />
+          <AuthModeToggle mode={mode} onModeChange={handleModeChange} />
 
-              {error && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'error.main',
-                      bgcolor: 'rgba(239, 68, 68, 0.1)',
-                      border: 1,
-                      borderColor: 'error.dark',
-                      borderRadius: 1,
-                      p: 1.5,
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => dispatch(clearError())}
-                  >
-                    {error}
-                  </Typography>
-                </Box>
-              )}
+          {error && (
+              <Box sx={{ mb: 2 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'error.main',
+                    bgcolor: 'rgba(239, 68, 68, 0.1)',
+                    border: 1,
+                    borderColor: 'error.dark',
+                    borderRadius: 1,
+                    p: 1.5,
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => dispatch(clearError())}
+                >
+                  {error}
+                </Typography>
+              </Box>
+            )}
 
-              <AuthForm
-                mode={mode}
-                formData={formData}
-                errors={errors}
-                isLoading={isLoading}
-                onFormChange={updateFormData}
-                onSubmit={handleSubmit}
-              />
-            </>
-          )}
+            <AuthForm
+              mode={mode}
+              formData={formData}
+              errors={errors}
+              isLoading={isLoading}
+              onFormChange={updateFormData}
+              onSubmit={handleSubmit}
+            />
         </Card>
 
         <Typography
