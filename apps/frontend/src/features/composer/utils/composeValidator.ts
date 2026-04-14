@@ -32,11 +32,11 @@ export function validateCompose(
       });
     }
 
-    // Service name should be valid (lowercase, alphanumeric, hyphens, underscores)
-    if (!/^[a-z][a-z0-9_-]*$/.test(svc.name)) {
+    // Service name should be valid for Docker
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(svc.name)) {
       issues.push({
         severity: 'warning',
-        message: `Service name "${svc.name}" should be lowercase, start with a letter, and contain only [a-z0-9_-]`,
+        message: `Service name "${svc.name}" contains invalid characters — must match [a-zA-Z0-9_.-] and start with alphanumeric`,
         nodeId: svc.id,
         field: 'name',
       });
@@ -95,14 +95,37 @@ export function validateCompose(
 
     // Env var validation
     for (const env of svc.environment) {
-      if (env.key && !/^[A-Za-z_][A-Za-z0-9_.]*$/.test(env.key)) {
+      if (env.key && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(env.key)) {
         issues.push({
           severity: 'warning',
-          message: `Service "${svc.name}" env var "${env.key}" has unusual characters`,
+          message: `Service "${svc.name}" env var "${env.key}" contains invalid characters — keys must match [A-Za-z_][A-Za-z0-9_]*`,
           nodeId: svc.id,
           field: 'environment',
         });
       }
+    }
+
+    // Volume path validation
+    for (const vol of svc.volumes) {
+      if (vol.container && !vol.container.startsWith('/')) {
+        issues.push({
+          severity: 'warning',
+          message: `Service "${svc.name}" volume container path "${vol.container}" should start with /`,
+          nodeId: svc.id,
+          field: 'volumes',
+        });
+      }
+    }
+
+    // Restart policy validation
+    const validRestartPolicies = ['no', 'always', 'on-failure', 'unless-stopped'];
+    if (svc.restart && !validRestartPolicies.includes(svc.restart)) {
+      issues.push({
+        severity: 'warning',
+        message: `Service "${svc.name}" has invalid restart policy "${svc.restart}" — must be one of: ${validRestartPolicies.join(', ')}`,
+        nodeId: svc.id,
+        field: 'restart',
+      });
     }
 
     // Referenced networks exist
@@ -112,6 +135,44 @@ export function validateCompose(
         issues.push({
           severity: 'warning',
           message: `Service "${svc.name}" references network "${netName}" which is not defined`,
+          nodeId: svc.id,
+          field: 'networks',
+        });
+      }
+    }
+
+    // Volume references via edges
+    const volumeEdges = edges.filter(
+      (e) =>
+        (e.source === svc.id || e.target === svc.id) &&
+        (e.data?.edgeType === 'volume' || e.sourceHandle === 'volume-out' || e.targetHandle === 'volume-in'),
+    );
+    for (const ve of volumeEdges) {
+      const volNodeId = ve.source === svc.id ? ve.target : ve.source;
+      const volExists = volumes.some((v) => v.id === volNodeId);
+      if (!volExists) {
+        issues.push({
+          severity: 'error',
+          message: `Service "${svc.name}" references a volume node that does not exist`,
+          nodeId: svc.id,
+          field: 'volumes',
+        });
+      }
+    }
+
+    // Network references via edges
+    const networkEdges = edges.filter(
+      (e) =>
+        (e.source === svc.id || e.target === svc.id) &&
+        (e.data?.edgeType === 'network' || e.sourceHandle === 'network-out' || e.targetHandle === 'network-in'),
+    );
+    for (const ne of networkEdges) {
+      const netNodeId = ne.source === svc.id ? ne.target : ne.source;
+      const netExists = networks.some((n) => n.id === netNodeId);
+      if (!netExists) {
+        issues.push({
+          severity: 'error',
+          message: `Service "${svc.name}" references a network node that does not exist`,
           nodeId: svc.id,
           field: 'networks',
         });

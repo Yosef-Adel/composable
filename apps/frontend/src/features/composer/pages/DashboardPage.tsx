@@ -48,6 +48,7 @@ import { YamlPanel } from '../components/YamlPanel';
 import { ValidationPanel } from '../components/ValidationPanel';
 import { ShareDialog } from '../components/ShareDialog';
 import { ProjectSettingsDialog } from '../components/ProjectSettingsDialog';
+import { VersionHistoryPanel } from '../components/VersionHistoryPanel';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { generateYaml } from '../utils/yamlGenerator';
 import { generateDocs } from '../utils/docsGenerator';
@@ -82,6 +83,7 @@ function DashboardPageInner() {
   const [showValidation, setShowValidation] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [projectName, setProjectName] = useState('Composable');
   const [isLoading, setIsLoading] = useState(true);
   const [leftPanelWidth, setLeftPanelWidth] = useState(280);
@@ -589,6 +591,16 @@ function DashboardPageInner() {
             <Button
               variant="outlined"
               size="small"
+              startIcon={<Iconify icon="solar:history-bold" width={16} />}
+              onClick={() => setVersionHistoryOpen(true)}
+              sx={{ borderColor: 'grey.700', color: 'grey.300' }}
+            >
+              History
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="small"
               startIcon={<Iconify icon="solar:share-bold" width={16} />}
               onClick={() => setShowShareDialog(true)}
               sx={{ borderColor: 'grey.700', color: 'grey.300' }}
@@ -722,6 +734,15 @@ function DashboardPageInner() {
           projectId={projectId}
           projectName={projectName}
           onNameChange={setProjectName}
+        />
+      )}
+
+      {/* Version History Panel */}
+      {projectId && (
+        <VersionHistoryPanel
+          open={versionHistoryOpen}
+          onClose={() => setVersionHistoryOpen(false)}
+          projectId={projectId}
         />
       )}
     </Box>

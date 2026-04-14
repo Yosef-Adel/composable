@@ -122,4 +122,44 @@ export class ProjectsController {
   async unshare(@Request() req: any, @Param('id') id: string) {
     await this.projectsService.unshareProject(id, req.user.sub);
   }
+
+  // ── Version History ────────────────────────────────────────────
+
+  @Post(':id/versions')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Save a version snapshot' })
+  async saveVersion(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { message?: string },
+  ) {
+    return this.projectsService.saveVersion(id, req.user.sub, body.message);
+  }
+
+  @Get(':id/versions')
+  @ApiOperation({ summary: 'List versions for a project' })
+  async getVersions(@Request() req: any, @Param('id') id: string) {
+    return this.projectsService.getVersions(id, req.user.sub);
+  }
+
+  @Get(':id/versions/:versionId')
+  @ApiOperation({ summary: 'Get a single version with full data' })
+  async getVersion(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('versionId') versionId: string,
+  ) {
+    return this.projectsService.getVersion(id, versionId, req.user.sub);
+  }
+
+  @Post(':id/versions/:versionId/restore')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Restore a version' })
+  async restoreVersion(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Param('versionId') versionId: string,
+  ) {
+    return this.projectsService.restoreVersion(id, versionId, req.user.sub);
+  }
 }

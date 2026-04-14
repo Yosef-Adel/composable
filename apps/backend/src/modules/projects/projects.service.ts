@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { randomBytes } from 'crypto';
 import { Project } from './project.schema';
+import { ProjectVersion } from './project-version.schema';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto, SaveComposerDataDto } from './dto/update-project.dto';
 
@@ -17,6 +18,8 @@ export class ProjectsService {
 
   constructor(
     @InjectModel(Project.name) private projectModel: Model<Project>,
+    @InjectModel(ProjectVersion.name)
+    private versionModel: Model<ProjectVersion>,
   ) {}
 
   async create(ownerId: string, dto: CreateProjectDto): Promise<Project> {
@@ -194,5 +197,96 @@ export class ProjectsService {
       throw new NotFoundException('Shared project not found');
     }
     return project as Project;
+  }
+
+  // ── Version History ────────────────────────────────────────────
+
+  async saveVersion(
+    projectId: string,
+    ownerId: string,
+    message?: string,
+  ): Promise<ProjectVersion> {
+    const project = await this.findById(projectId, ownerId);
+    const lastVersion = await this.versionModel
+      .findOne({ projectId: new Types.ObjectId(projectId) })
+      .sort({ version: -1 })
+      .lean()
+      .exec();
+
+    const nextVersion = lastVersion ? (lastVersion as any).version + 1 : 1;
+
+    return this.versionModel.create({
+      projectId: new Types.ObjectId(projectId),
+      version: nextVersion,
+      message: message ?? '',
+      composerData: project.composerData ?? {
+        nodes: [],
+        edges: [],
+        nodeConfigs: {},
+      },
+      source: 'manual',
+    });
+  }
+
+  async getVersions(
+    projectId: string,
+    ownerId: string,
+  ): Promise<ProjectVersion[]> {
+    await this.findById(projectId, ownerId);
+    return this.versionModel
+      .find({ projectId: new Types.ObjectId(projectId) })
+      .select('version message source createdAt')
+      .sort({ version: -1 })
+      .lean()
+      .exec() as Promise<ProjectVersion[]>;
+  }
+
+  async getVersion(
+    projectId: string,
+    versionId: string,
+    ownerId: string,
+  ): Promise<ProjectVersion> {
+    await this.findById(projectId, ownerId);
+    const version = await this.versionModel
+      .findOne({
+        _id: new Types.ObjectId(versionId),
+        projectId: new Types.ObjectId(projectId),
+      })
+      .lean()
+      .exec();
+
+    if (!version) {
+      throw new NotFoundException('Version not found');
+    }
+    return version as ProjectVersion;
+  }
+
+  async restoreVersion(
+    projectId: string,
+    versionId: string,
+    ownerId: string,
+  ): Promise<Project> {
+    const version = await this.getVersion(projectId, versionId, ownerId);
+    const composerData = (version as any).composerData;
+
+    const project = await this.projectModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(projectId),
+        ownerId: new Types.ObjectId(ownerId),
+        deletedAt: null,
+      },
+      {
+        $set: {
+          composerData,
+          nodeCount: composerData?.nodes?.length ?? 0,
+        },
+      },
+      { new: true },
+    );
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+    return project;
   }
 }
