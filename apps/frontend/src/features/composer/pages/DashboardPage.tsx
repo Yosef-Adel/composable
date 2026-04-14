@@ -98,7 +98,6 @@ function DashboardPageInner() {
       position: node.position,
       data: node.data,
     }));
-    console.log('[Composer] saveSync:', { nodesCount: cleanNodes.length, edgesCount: e.length, firstNode: cleanNodes[0], firstEdge: e[0] });
     const payload = JSON.stringify({
       nodes: cleanNodes,
       edges: e,
@@ -153,13 +152,6 @@ function DashboardPageInner() {
         setProjectName(project.name ?? 'Composable');
 
         const composerData = project.composerData;
-        console.log('[Composer] Raw composerData from API:', {
-          nodesCount: composerData?.nodes?.length,
-          edgesCount: composerData?.edges?.length,
-          nodeConfigsKeys: Object.keys(composerData?.nodeConfigs ?? {}),
-          firstNode: composerData?.nodes?.[0],
-          firstEdge: composerData?.edges?.[0],
-        });
         dispatch(
           loadProjectData({
             nodes: composerData?.nodes ?? [],

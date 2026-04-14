@@ -71,15 +71,6 @@ export class ProjectsService {
     if (!project) {
       throw new NotFoundException('Project not found');
     }
-
-    const cd = (project as any).composerData;
-    this.logger.log(
-      `Loading project ${projectId}: ${cd?.nodes?.length ?? 0} nodes, ${cd?.edges?.length ?? 0} edges, ${Object.keys(cd?.nodeConfigs ?? {}).length} configs`,
-    );
-    if (cd?.nodes?.length > 0) {
-      this.logger.log(`First loaded node: ${JSON.stringify(cd.nodes[0])}`);
-    }
-
     return project as Project;
   }
 
@@ -109,15 +100,6 @@ export class ProjectsService {
     ownerId: string,
     dto: SaveComposerDataDto,
   ): Promise<Project> {
-    this.logger.log(
-      `Saving composer data: ${dto.nodes?.length ?? 0} nodes, ${dto.edges?.length ?? 0} edges, ${Object.keys(dto.nodeConfigs ?? {}).length} configs`,
-    );
-    if (dto.nodes?.length > 0) {
-      this.logger.log(`First node: ${JSON.stringify(dto.nodes[0])}`);
-    }
-    if (dto.edges?.length > 0) {
-      this.logger.log(`First edge: ${JSON.stringify(dto.edges[0])}`);
-    }
     const project = await this.projectModel.findOneAndUpdate(
       {
         _id: new Types.ObjectId(projectId),
