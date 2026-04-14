@@ -30,6 +30,7 @@ import {
   applyEdgeChangesAction,
   addConnection,
   setSelectedNode,
+  setNodes,
   loadProjectData,
 } from '../store/composerSlice';
 import { ServicePalette } from '../components/ServicePalette';
@@ -37,6 +38,7 @@ import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { YamlPanel } from '../components/YamlPanel';
 import { generateYaml } from '../utils/yamlGenerator';
+import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
 import type { BuildingBlockType, ServiceConfig } from '../types';
 import { HANDLE_IDS } from '../components/ServiceNode';
 
@@ -192,6 +194,15 @@ function DashboardPageInner() {
     reactFlowInstance.fitView({ padding: 0.2, duration: 300 });
   }, [reactFlowInstance]);
 
+  const handleAutoLayout = useCallback(
+    (direction: LayoutDirection = 'TB') => {
+      const layouted = autoLayout(nodes, edges, direction);
+      dispatch(setNodes(layouted));
+      setTimeout(() => reactFlowInstance.fitView({ padding: 0.2, duration: 300 }), 50);
+    },
+    [nodes, edges, dispatch, reactFlowInstance],
+  );
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -260,6 +271,14 @@ function DashboardPageInner() {
 
             <IconButton onClick={handleFitView} sx={{ color: 'grey.400' }} title="Fit to view">
               <Iconify icon="solar:maximize-bold" width={20} />
+            </IconButton>
+
+            <IconButton onClick={() => handleAutoLayout('TB')} sx={{ color: 'grey.400' }} title="Auto-layout (top to bottom)">
+              <Iconify icon="solar:sort-vertical-bold" width={20} />
+            </IconButton>
+
+            <IconButton onClick={() => handleAutoLayout('LR')} sx={{ color: 'grey.400' }} title="Auto-layout (left to right)">
+              <Iconify icon="solar:sort-horizontal-bold" width={20} />
             </IconButton>
 
             <Button

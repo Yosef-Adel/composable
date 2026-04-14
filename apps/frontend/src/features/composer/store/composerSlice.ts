@@ -247,6 +247,10 @@ const composerSlice = createSlice({
       state.nodeConfigs = {};
       state.selectedNodeId = null;
     },
+
+    setNodes: (state, action: PayloadAction<Node[]>) => {
+      state.nodes = action.payload;
+    },
   },
 });
 
@@ -260,6 +264,7 @@ export const {
   setSelectedNode,
   loadProjectData,
   clearComposer,
+  setNodes,
 } = composerSlice.actions;
 
 export default composerSlice.reducer;
