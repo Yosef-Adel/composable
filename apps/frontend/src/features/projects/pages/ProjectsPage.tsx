@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Container, Typography, Button, Grid, AppBar, Toolbar, IconButton, Alert, CircularProgress } from '@mui/material';
+import { Box, Container, Typography, Button, Grid, AppBar, Toolbar, IconButton, Alert, CircularProgress, TextField, InputAdornment } from '@mui/material';
 import { Iconify } from '@composable/ui-kit';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { fetchProjects, createProjectAsync, deleteProjectAsync, setCurrentProject } from '../store/projectsSlice';
@@ -12,6 +12,12 @@ export function ProjectsPage() {
   const dispatch = useAppDispatch();
   const { projects, isLoading, error } = useAppSelector((state) => state.projects);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredProjects = useMemo(
+    () => projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase())),
+    [projects, search],
+  );
 
   useEffect(() => {
     dispatch(fetchProjects());
@@ -151,17 +157,35 @@ export function ProjectsPage() {
           </Box>
         ) : (
           <>
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h5" sx={{ mb: 1 }}>
-                All Projects
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {projects.length} {projects.length === 1 ? 'project' : 'projects'}
-              </Typography>
+            <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography variant="h5" sx={{ mb: 1 }}>
+                  All Projects
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {filteredProjects.length} of {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+                </Typography>
+              </Box>
+              <TextField
+                size="small"
+                placeholder="Search projects…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Iconify icon="solar:magnifer-bold" width={18} sx={{ color: 'grey.500' }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{ width: 260 }}
+              />
             </Box>
 
             <Grid container spacing={3}>
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
                 <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={project.id}>
                   <ProjectCard
                     project={project}

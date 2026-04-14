@@ -9,6 +9,7 @@ import ReactFlow, {
   type NodeChange,
   type EdgeChange,
   type NodeMouseHandler,
+  type Node,
   useReactFlow,
   ReactFlowProvider,
 } from 'reactflow';
@@ -39,19 +40,21 @@ import {
   undo,
   redo,
 } from '../store/composerSlice';
+import { toggleTheme } from '@/app/store/themeSlice';
 import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { YamlPanel } from '../components/YamlPanel';
 import { ValidationPanel } from '../components/ValidationPanel';
 import { ShareDialog } from '../components/ShareDialog';
+import { ProjectSettingsDialog } from '../components/ProjectSettingsDialog';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { generateYaml } from '../utils/yamlGenerator';
 import { generateDocs } from '../utils/docsGenerator';
 import { parseDockerCompose } from '../utils/yamlImporter';
 import { validateCompose } from '../utils/composeValidator';
 import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
-import type { BuildingBlockType, ServiceConfig } from '../types';
+import type { BuildingBlockType, NodeConfig, ServiceConfig } from '../types';
 import type { StackTemplate } from '../data/stackTemplates';
 import { HANDLE_IDS } from '../components/ServiceNode';
 
@@ -72,10 +75,13 @@ function DashboardPageInner() {
   const nodes = useAppSelector((state) => state.composer.nodes);
   const edges = useAppSelector((state) => state.composer.edges);
   const nodeConfigs = useAppSelector((state) => state.composer.nodeConfigs);
+  const themeMode = useAppSelector((state) => state.theme.mode);
 
+  const [clipboard, setClipboard] = useState<{nodes: Node[], configs: Record<string, NodeConfig>} | null>(null);
   const [showYamlPanel, setShowYamlPanel] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [projectName, setProjectName] = useState('Composable');
   const [isLoading, setIsLoading] = useState(true);
   const [leftPanelWidth, setLeftPanelWidth] = useState(280);
@@ -350,11 +356,40 @@ function DashboardPageInner() {
           e.preventDefault();
           dispatch(redo());
           break;
+        case 'c': {
+          e.preventDefault();
+          const selectedNodes = reactFlowInstance.getNodes().filter((n) => n.selected);
+          if (selectedNodes.length === 0) break;
+          const configs: Record<string, NodeConfig> = {};
+          for (const n of selectedNodes) {
+            if (nodeConfigs[n.id]) {
+              configs[n.id] = nodeConfigs[n.id];
+            }
+          }
+          setClipboard({ nodes: selectedNodes, configs });
+          break;
+        }
+        case 'v': {
+          e.preventDefault();
+          if (!clipboard) break;
+          for (const node of clipboard.nodes) {
+            const config = clipboard.configs[node.id];
+            if (!config) continue;
+            const blockType = config.type as BuildingBlockType;
+            const template: Partial<ServiceConfig> = { ...config } as Partial<ServiceConfig>;
+            dispatch(addNodeAction({
+              blockType,
+              position: { x: node.position.x + 50, y: node.position.y + 50 },
+              template,
+            }));
+          }
+          break;
+        }
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [dispatch, saveAsync]);
+  }, [dispatch, saveAsync, clipboard, nodeConfigs, reactFlowInstance]);
 
   // ── Render ──────────────────────────────────────────────────────
 
@@ -391,11 +426,19 @@ function DashboardPageInner() {
                 Docker Compose Project
               </Typography>
             </Box>
+
+            <IconButton onClick={() => setSettingsOpen(true)} size="small" sx={{ color: 'grey.400' }}>
+              <Iconify icon="solar:settings-bold" width={18} />
+            </IconButton>
           </Box>
 
           <Box sx={{ flexGrow: 1 }} />
 
           <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton onClick={() => dispatch(toggleTheme())} size="small" sx={{ color: 'grey.400' }} title="Toggle theme">
+              <Iconify icon={themeMode === 'dark' ? 'solar:sun-bold' : 'solar:moon-bold'} width={18} />
+            </IconButton>
+
             <IconButton onClick={() => navigate('/projects')} sx={{ color: 'grey.400' }}>
               <Iconify icon="solar:home-2-bold" width={20} />
             </IconButton>
@@ -668,6 +711,17 @@ function DashboardPageInner() {
           open={showShareDialog}
           onClose={() => setShowShareDialog(false)}
           projectId={projectId}
+        />
+      )}
+
+      {/* Project Settings Dialog */}
+      {projectId && (
+        <ProjectSettingsDialog
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          projectId={projectId}
+          projectName={projectName}
+          onNameChange={setProjectName}
         />
       )}
     </Box>
