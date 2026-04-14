@@ -94,6 +94,7 @@ function DashboardPageInner() {
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [projectName, setProjectName] = useState('Composable');
   const [isLoading, setIsLoading] = useState(true);
+  const [isDirty, setIsDirty] = useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = useState(280);
   const [rightPanelWidth, setRightPanelWidth] = useState(320);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
@@ -169,6 +170,7 @@ function DashboardPageInner() {
         nodeConfigs: nc,
         nodeCount: n.length,
       })
+      .then(() => setIsDirty(false))
       .catch(() => {});
   }, []);
 
@@ -223,6 +225,7 @@ function DashboardPageInner() {
   useEffect(() => {
     if (!projectId || !isLoadedRef.current) return;
 
+    setIsDirty(true);
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(saveAsync, 2000);
 
@@ -469,7 +472,21 @@ function DashboardPageInner() {
               <Iconify icon="solar:box-bold" width={24} sx={{ color: 'white' }} />
             </Box>
             <Box>
-              <Typography variant="h6">{projectName}</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h6">{projectName}</Typography>
+                {isDirty && (
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      bgcolor: 'warning.main',
+                      flexShrink: 0,
+                    }}
+                    title="Unsaved changes"
+                  />
+                )}
+              </Box>
               <Typography variant="caption" color="text.secondary">
                 Docker Compose Project
               </Typography>
