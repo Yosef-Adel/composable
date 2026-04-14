@@ -46,6 +46,7 @@ import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { YamlPanel } from '../components/YamlPanel';
 import { ValidationPanel } from '../components/ValidationPanel';
+import { DocsPanel } from '../components/DocsPanel';
 import { ShareDialog } from '../components/ShareDialog';
 import { ProjectSettingsDialog } from '../components/ProjectSettingsDialog';
 import { VersionHistoryPanel } from '../components/VersionHistoryPanel';
@@ -94,6 +95,8 @@ function DashboardPageInner() {
   const [yamlPanelWidth, setYamlPanelWidth] = useState(420);
   const [validationPanelWidth, setValidationPanelWidth] = useState(360);
   const [canvasTool, setCanvasTool] = useState<'select' | 'hand'>('select');
+  const [showDocsPanel, setShowDocsPanel] = useState(false);
+  const [docsPanelWidth, setDocsPanelWidth] = useState(420);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadedRef = useRef(false);
   const projectIdRef = useRef(projectId);
@@ -164,6 +167,7 @@ function DashboardPageInner() {
   }, []);
 
   const yamlContent = useMemo(() => generateYaml(nodeConfigs, edges), [nodeConfigs, edges]);
+  const docsContent = useMemo(() => generateDocs(nodeConfigs, edges, projectName), [nodeConfigs, edges, projectName]);
 
   // Load composer data from backend
   useEffect(() => {
@@ -374,6 +378,10 @@ function DashboardPageInner() {
         case 's':
           e.preventDefault();
           saveAsync();
+          // Also save a version snapshot automatically
+          if (projectId) {
+            api.post(`/projects/${projectId}/versions`, { message: 'Auto-save', source: 'auto' }).catch(() => {});
+          }
           dispatch(showNotification({ message: 'Project saved', severity: 'success' }));
           break;
         case 'z':
@@ -421,7 +429,7 @@ function DashboardPageInner() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [dispatch, saveAsync, clipboard, nodeConfigs, reactFlowInstance]);
+  }, [dispatch, saveAsync, clipboard, nodeConfigs, reactFlowInstance, projectId]);
 
   // ── Render ──────────────────────────────────────────────────────
 
@@ -501,7 +509,7 @@ function DashboardPageInner() {
               variant={showYamlPanel ? 'contained' : 'outlined'}
               size="small"
               startIcon={<Iconify icon="solar:code-bold" width={16} />}
-              onClick={() => { setShowYamlPanel((v) => !v); setShowValidation(false); }}
+              onClick={() => { setShowYamlPanel((v) => !v); setShowValidation(false); setShowDocsPanel(false); }}
               sx={showYamlPanel
                 ? { background: 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)' }
                 : { borderColor: 'grey.700', color: 'grey.300' }
@@ -514,7 +522,7 @@ function DashboardPageInner() {
               variant={showValidation ? 'contained' : 'outlined'}
               size="small"
               startIcon={<Iconify icon="solar:shield-check-bold" width={16} />}
-              onClick={() => { setShowValidation((v) => !v); setShowYamlPanel(false); }}
+              onClick={() => { setShowValidation((v) => !v); setShowYamlPanel(false); setShowDocsPanel(false); }}
               sx={showValidation
                 ? { background: 'linear-gradient(90deg, #22c55e 0%, #10b981 100%)' }
                 : { borderColor: 'grey.700', color: 'grey.300' }
@@ -583,28 +591,12 @@ function DashboardPageInner() {
               variant="outlined"
               size="small"
               startIcon={<Iconify icon="solar:document-text-bold" width={16} />}
-              onClick={() => {
-                const issues = validateCompose(nodeConfigs, edges);
-                const errors = issues.filter((i) => i.severity === 'error');
-                if (errors.length > 0) {
-                  dispatch(showNotification({ message: `Compose has ${errors.length} error(s). Fix them before exporting.`, severity: 'warning' }));
-                  return;
-                }
-                const warnings = issues.filter((i) => i.severity === 'warning' || i.severity === 'info');
-                const docs = generateDocs(nodeConfigs, edges, projectName);
-                const blob = new Blob([docs], { type: 'text/markdown' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'README.md';
-                a.click();
-                URL.revokeObjectURL(url);
-                if (warnings.length > 0) {
-                  dispatch(showNotification({ message: `Exported with ${warnings.length} warning(s)`, severity: 'info' }));
-                }
-              }}
+              onClick={() => { setShowDocsPanel((v) => !v); setShowYamlPanel(false); setShowValidation(false); }}
               disabled={Object.keys(nodeConfigs).length === 0}
-              sx={{ borderColor: 'grey.700', color: 'grey.300' }}
+              sx={{
+                borderColor: showDocsPanel ? 'primary.main' : 'grey.700',
+                color: showDocsPanel ? 'primary.main' : 'grey.300',
+              }}
             >
               Docs
             </Button>
@@ -861,6 +853,12 @@ function DashboardPageInner() {
           <ResizeHandle side="left" width={validationPanelWidth} onResize={setValidationPanelWidth} minWidth={280} maxWidth={600} />
         )}
         <ValidationPanel open={showValidation} onClose={() => setShowValidation(false)} width={validationPanelWidth} />
+
+        {/* Docs Panel */}
+        {showDocsPanel && (
+          <ResizeHandle side="left" width={docsPanelWidth} onResize={setDocsPanelWidth} minWidth={300} maxWidth={700} />
+        )}
+        <DocsPanel docs={docsContent} open={showDocsPanel} onClose={() => setShowDocsPanel(false)} width={docsPanelWidth} />
       </Box>
 
       {/* Share Dialog */}
