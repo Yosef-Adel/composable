@@ -99,6 +99,17 @@ function DashboardPageInner() {
   const latestStateRef = useRef({ nodes, edges, nodeConfigs });
   latestStateRef.current = { nodes, edges, nodeConfigs };
 
+  const handleApplyYaml = useCallback((yamlString: string) => {
+    try {
+      const parsed = parseDockerCompose(yamlString);
+      dispatch(loadProjectData(parsed));
+      dispatch(showNotification({ message: 'YAML applied to canvas', severity: 'success' }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Invalid YAML';
+      dispatch(showNotification({ message: `Failed to apply YAML: ${message}`, severity: 'error' }));
+    }
+  }, [dispatch]);
+
   // Synchronous save function (for beforeunload)
   const saveSync = useCallback(() => {
     const pid = projectIdRef.current;
@@ -708,7 +719,7 @@ function DashboardPageInner() {
         {showYamlPanel && (
           <ResizeHandle side="left" width={yamlPanelWidth} onResize={setYamlPanelWidth} minWidth={300} maxWidth={700} />
         )}
-        <YamlPanel yaml={yamlContent} open={showYamlPanel} onClose={() => setShowYamlPanel(false)} width={yamlPanelWidth} />
+        <YamlPanel yaml={yamlContent} open={showYamlPanel} onClose={() => setShowYamlPanel(false)} onApplyYaml={handleApplyYaml} width={yamlPanelWidth} />
 
         {/* Validation Panel */}
         {showValidation && (
