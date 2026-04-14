@@ -43,6 +43,7 @@ import { ValidationPanel } from '../components/ValidationPanel';
 import { ShareDialog } from '../components/ShareDialog';
 import { generateYaml } from '../utils/yamlGenerator';
 import { generateDocs } from '../utils/docsGenerator';
+import { parseDockerCompose } from '../utils/yamlImporter';
 import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
 import type { BuildingBlockType, ServiceConfig } from '../types';
 import { HANDLE_IDS } from '../components/ServiceNode';
@@ -210,6 +211,27 @@ function DashboardPageInner() {
     [nodes, edges, dispatch, reactFlowInstance],
   );
 
+  const handleImportYaml = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.yml,.yaml';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = parseDockerCompose(text);
+        // Auto-layout the imported nodes
+        const layouted = autoLayout(parsed.nodes, parsed.edges, 'TB');
+        dispatch(loadProjectData({ nodes: layouted, edges: parsed.edges, nodeConfigs: parsed.nodeConfigs }));
+        setTimeout(() => reactFlowInstance.fitView({ padding: 0.2, duration: 300 }), 100);
+      } catch {
+        // Invalid YAML
+      }
+    };
+    input.click();
+  }, [dispatch, reactFlowInstance]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -302,6 +324,16 @@ function DashboardPageInner() {
             <IconButton onClick={() => handleAutoLayout('LR')} sx={{ color: 'grey.400' }} title="Auto-layout (left to right)">
               <Iconify icon="solar:sort-horizontal-bold" width={20} />
             </IconButton>
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Iconify icon="solar:upload-bold" width={16} />}
+              onClick={handleImportYaml}
+              sx={{ borderColor: 'grey.700', color: 'grey.300' }}
+            >
+              Import
+            </Button>
 
             <Button
               variant={showYamlPanel ? 'contained' : 'outlined'}
