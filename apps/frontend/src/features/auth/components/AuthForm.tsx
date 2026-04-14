@@ -10,7 +10,6 @@ interface AuthFormProps {
   isLoading: boolean;
   onFormChange: (data: Partial<AuthFormData>) => void;
   onSubmit: (e: React.FormEvent) => void;
-  onDemoLogin: () => void;
 }
 
 export function AuthForm({
@@ -20,7 +19,6 @@ export function AuthForm({
   isLoading,
   onFormChange,
   onSubmit,
-  onDemoLogin,
 }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -173,51 +171,6 @@ export function AuthForm({
           }}
         >
           {isLoading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
-        </Button>
-
-        {/* Divider */}
-        <Box sx={{ position: 'relative', my: 1 }}>
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Box sx={{ width: '100%', borderTop: 1, borderColor: 'grey.700' }} />
-          </Box>
-          <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-            <Typography
-              variant="caption"
-              sx={{
-                px: 1,
-                bgcolor: 'rgba(30, 41, 59, 0.5)',
-                color: 'grey.400',
-              }}
-            >
-              OR
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Demo Login */}
-        <Button
-          onClick={onDemoLogin}
-          variant="outlined"
-          size="large"
-          sx={{
-            py: 1.5,
-            bgcolor: 'rgba(15, 23, 42, 0.5)',
-            borderColor: 'grey.700',
-            color: 'grey.300',
-            '&:hover': {
-              bgcolor: 'rgba(15, 23, 42, 0.8)',
-              borderColor: 'grey.600',
-            },
-          }}
-        >
-          Continue with Demo Account
         </Button>
 
         {/* Terms */}

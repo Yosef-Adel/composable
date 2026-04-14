@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Card, Typography } from '@mui/material';
+import { Box, Card, Typography, Alert } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { login, signup, demoLogin } from '../store/authSlice';
+import { loginAsync, signupAsync, clearError, validateSession } from '../store/authSlice';
 import { AuthBackground } from '../components/AuthBackground';
 import { AuthHeader } from '../components/AuthHeader';
 import { AuthModeToggle } from '../components/AuthModeToggle';
@@ -13,13 +13,16 @@ import type { AuthMode } from '../types';
 export function AuthPage() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { isLoading } = useAppSelector((state) => state.auth);
+  const { isLoading, isAuthenticated, error, requiresVerification } = useAppSelector(
+    (state) => state.auth,
+  );
   const [mode, setMode] = useState<AuthMode>('login');
   const { formData, errors, validateForm, updateFormData, resetForm } = useAuthForm(mode);
 
   const handleModeChange = (newMode: AuthMode) => {
     setMode(newMode);
     resetForm();
+    dispatch(clearError());
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,34 +34,33 @@ export function AuthPage() {
 
     if (mode === 'login') {
       dispatch(
-        login({
+        loginAsync({
           email: formData.email,
           password: formData.password,
-        })
+        }),
       );
     } else {
       dispatch(
-        signup({
+        signupAsync({
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          confirmPassword: formData.confirmPassword,
-        })
+        }),
       );
     }
   };
 
   // Navigate when auth succeeds
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/projects');
     }
   }, [isAuthenticated, navigate]);
 
-  const handleDemoLogin = () => {
-    dispatch(demoLogin());
-  };
+  // Validate existing session on mount
+  useEffect(() => {
+    dispatch(validateSession());
+  }, [dispatch]);
 
   return (
     <Box
@@ -91,6 +93,18 @@ export function AuthPage() {
         >
           <AuthModeToggle mode={mode} onModeChange={handleModeChange} />
 
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => dispatch(clearError())}>
+              {error}
+            </Alert>
+          )}
+
+          {requiresVerification && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Account created! Check your email for the verification code, then log in.
+            </Alert>
+          )}
+
           <AuthForm
             mode={mode}
             formData={formData}
@@ -98,7 +112,6 @@ export function AuthPage() {
             isLoading={isLoading}
             onFormChange={updateFormData}
             onSubmit={handleSubmit}
-            onDemoLogin={handleDemoLogin}
           />
         </Card>
 

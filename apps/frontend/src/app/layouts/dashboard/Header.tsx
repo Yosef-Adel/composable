@@ -5,7 +5,7 @@ import { Menu as MenuIcon } from '@mui/icons-material';
 import { Iconify } from '@composable/ui-kit';
 import { ThemeToggle } from '@shared/components/ThemeToggle';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
-import { logout } from '@/features/auth/store/authSlice';
+import { logoutAsync } from '@/features/auth/store/authSlice';
 
 interface HeaderProps {
   onOpenNav: () => void;
@@ -26,7 +26,7 @@ export function Header({ onOpenNav }: HeaderProps) {
   };
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutAsync());
     handleCloseMenu();
     navigate('/');
   };

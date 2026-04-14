@@ -1,12 +1,18 @@
 export interface User {
+  id: string;
   email: string;
   name: string;
+  roles: string[];
+  isEmailVerified: boolean;
 }
 
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  error: string | null;
+  requiresVerification: boolean;
+  pendingUserId: string | null;
 }
 
 export interface LoginCredentials {
