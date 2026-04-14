@@ -285,17 +285,19 @@ function DashboardPageInner() {
 
   const handleAddStack = useCallback(
     (stack: StackTemplate) => {
+      // Center the stack in the current viewport
+      const viewport = reactFlowInstance.getViewport();
+      const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+      const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
       dispatch(
         addStackAction({
           stack,
-          origin: {
-            x: Math.random() * 200 + 50,
-            y: Math.random() * 200 + 50,
-          },
+          origin: { x: centerX, y: centerY },
         })
       );
+      setTimeout(() => reactFlowInstance.fitView({ padding: 0.3, duration: 300 }), 50);
     },
-    [dispatch]
+    [dispatch, reactFlowInstance]
   );
 
   // Validate connections at the drag level before they reach Redux

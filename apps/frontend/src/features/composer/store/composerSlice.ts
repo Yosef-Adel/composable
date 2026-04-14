@@ -337,17 +337,18 @@ const composerSlice = createSlice({
 
       const nameToId: Record<string, string> = {};
       const SPACING_X = 300;
-      const SPACING_Y = 200;
-      const cols = Math.ceil(Math.sqrt(stack.services.length + (stack.volumes?.length ?? 0) + (stack.networks?.length ?? 0)));
+      const SERVICE_Y = 0;
+      const INFRA_Y = 280;
 
-      let idx = 0;
+      // Services in a horizontal row
+      const serviceCount = stack.services.length;
+      const totalServiceWidth = (serviceCount - 1) * SPACING_X;
+      const serviceStartX = origin.x - totalServiceWidth / 2;
 
-      // Add services
-      for (const svc of stack.services) {
+      for (let i = 0; i < stack.services.length; i++) {
+        const svc = stack.services[i];
         const id = generateNodeId();
         nameToId[svc.name] = id;
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
 
         const config: ServiceConfig = {
           id,
@@ -365,59 +366,45 @@ const composerSlice = createSlice({
         state.nodes.push({
           id,
           type: 'service',
-          position: { x: origin.x + col * SPACING_X, y: origin.y + row * SPACING_Y },
+          position: { x: serviceStartX + i * SPACING_X, y: origin.y + SERVICE_Y },
           data: buildNodeData(config),
         });
         state.nodeConfigs[id] = config;
-        idx++;
       }
 
-      // Add volumes
-      for (const vol of stack.volumes ?? []) {
+      // Volumes and networks in a row below services, centered
+      const infraItems: Array<{ type: 'volume' | 'network'; name: string; driver?: string }> = [
+        ...(stack.volumes ?? []).map((v) => ({ type: 'volume' as const, name: v.name, driver: v.driver })),
+        ...(stack.networks ?? []).map((n) => ({ type: 'network' as const, name: n.name, driver: n.driver })),
+      ];
+      const infraCount = infraItems.length;
+      const totalInfraWidth = (infraCount - 1) * SPACING_X;
+      const infraStartX = origin.x - totalInfraWidth / 2;
+
+      for (let i = 0; i < infraItems.length; i++) {
+        const item = infraItems[i];
         const id = generateNodeId();
-        nameToId[vol.name] = id;
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
+        nameToId[item.name] = id;
 
-        const config: VolumeConfig = {
-          id,
-          type: 'volume',
-          name: vol.name,
-          driver: vol.driver ?? 'local',
-        };
-
-        state.nodes.push({
-          id,
-          type: 'volume',
-          position: { x: origin.x + col * SPACING_X, y: origin.y + row * SPACING_Y },
-          data: buildNodeData(config),
-        });
-        state.nodeConfigs[id] = config;
-        idx++;
-      }
-
-      // Add networks
-      for (const net of stack.networks ?? []) {
-        const id = generateNodeId();
-        nameToId[net.name] = id;
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-
-        const config: NetworkConfig = {
-          id,
-          type: 'network',
-          name: net.name,
-          driver: net.driver ?? 'bridge',
-        };
-
-        state.nodes.push({
-          id,
-          type: 'network',
-          position: { x: origin.x + col * SPACING_X, y: origin.y + row * SPACING_Y },
-          data: buildNodeData(config),
-        });
-        state.nodeConfigs[id] = config;
-        idx++;
+        if (item.type === 'volume') {
+          const config: VolumeConfig = { id, type: 'volume', name: item.name, driver: item.driver ?? 'local' };
+          state.nodes.push({
+            id,
+            type: 'volume',
+            position: { x: infraStartX + i * SPACING_X, y: origin.y + INFRA_Y },
+            data: buildNodeData(config),
+          });
+          state.nodeConfigs[id] = config;
+        } else {
+          const config: NetworkConfig = { id, type: 'network', name: item.name, driver: item.driver ?? 'bridge' };
+          state.nodes.push({
+            id,
+            type: 'network',
+            position: { x: infraStartX + i * SPACING_X, y: origin.y + INFRA_Y },
+            data: buildNodeData(config),
+          });
+          state.nodeConfigs[id] = config;
+        }
       }
 
       // Add edges from connections
