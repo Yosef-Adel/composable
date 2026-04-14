@@ -37,6 +37,7 @@ import { ServicePalette } from '../components/ServicePalette';
 import { ServiceNode } from '../components/ServiceNode';
 import { PropertiesPanel } from '../components/PropertiesPanel';
 import { YamlPanel } from '../components/YamlPanel';
+import { ValidationPanel } from '../components/ValidationPanel';
 import { generateYaml } from '../utils/yamlGenerator';
 import { autoLayout, type LayoutDirection } from '../utils/autoLayout';
 import type { BuildingBlockType, ServiceConfig } from '../types';
@@ -61,6 +62,7 @@ function DashboardPageInner() {
   const nodeConfigs = useAppSelector((state) => state.composer.nodeConfigs);
 
   const [showYamlPanel, setShowYamlPanel] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
   const [projectName, setProjectName] = useState('Composable');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLoadedRef = useRef(false);
@@ -285,13 +287,26 @@ function DashboardPageInner() {
               variant={showYamlPanel ? 'contained' : 'outlined'}
               size="small"
               startIcon={<Iconify icon="solar:code-bold" width={16} />}
-              onClick={() => setShowYamlPanel((v) => !v)}
+              onClick={() => { setShowYamlPanel((v) => !v); setShowValidation(false); }}
               sx={showYamlPanel
                 ? { background: 'linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)' }
                 : { borderColor: 'grey.700', color: 'grey.300' }
               }
             >
               YAML
+            </Button>
+
+            <Button
+              variant={showValidation ? 'contained' : 'outlined'}
+              size="small"
+              startIcon={<Iconify icon="solar:shield-check-bold" width={16} />}
+              onClick={() => { setShowValidation((v) => !v); setShowYamlPanel(false); }}
+              sx={showValidation
+                ? { background: 'linear-gradient(90deg, #22c55e 0%, #10b981 100%)' }
+                : { borderColor: 'grey.700', color: 'grey.300' }
+              }
+            >
+              Validate
             </Button>
 
             <Button
@@ -388,6 +403,9 @@ function DashboardPageInner() {
 
         {/* YAML Panel (Monaco Editor) */}
         <YamlPanel yaml={yamlContent} open={showYamlPanel} onClose={() => setShowYamlPanel(false)} />
+
+        {/* Validation Panel */}
+        <ValidationPanel open={showValidation} onClose={() => setShowValidation(false)} />
       </Box>
     </Box>
   );
