@@ -68,29 +68,9 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           >
             Start Building
           </Button>
-          <Button
-            variant="outlined"
-            size="large"
-            onClick={() => {
-              document.getElementById('demo-preview')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            sx={{
-              px: 4,
-              py: 1.5,
-              fontSize: '1.125rem',
-              borderColor: 'grey.800',
-              color: 'text.primary',
-              '&:hover': {
-                borderColor: 'grey.700',
-                bgcolor: 'grey.900'
-              }
-            }}
-          >
-            View Demo
-          </Button>
         </Box>
 
-        <Box id="demo-preview" sx={{ mt: 8, position: 'relative' }}>
+        <Box sx={{ mt: 8, position: 'relative' }}>
           <Box
             sx={{
               position: 'absolute',
