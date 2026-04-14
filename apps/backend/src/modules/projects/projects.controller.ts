@@ -11,8 +11,6 @@ import {
   Request,
   HttpCode,
   HttpStatus,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -96,12 +94,18 @@ export class ProjectsController {
 
   @Put(':id/composer')
   @ApiOperation({ summary: 'Save composer data for a project' })
-  @UsePipes(new ValidationPipe({ whitelist: false, transform: false }))
   async saveComposerData(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() dto: SaveComposerDataDto,
+    @Body() body: any,
   ) {
+    // Skip DTO class to avoid global ValidationPipe whitelist stripping nested objects
+    const dto: SaveComposerDataDto = {
+      nodes: body.nodes ?? [],
+      edges: body.edges ?? [],
+      nodeConfigs: body.nodeConfigs ?? {},
+      nodeCount: body.nodeCount ?? body.nodes?.length ?? 0,
+    };
     return this.projectsService.saveComposerData(id, req.user.sub, dto);
   }
 
